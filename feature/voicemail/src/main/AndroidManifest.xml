@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+    :feature:voicemail — Visual Voicemail (BUILD_SPEC §8).
+
+    Visual voicemail reads from VoicemailContract; that data is gated behind the
+    default-dialer role plus the voicemail permissions below. These declarations
+    merge into :app (CONVENTIONS.md §8). The actual provider access lives in the
+    VoicemailRepository impl (:core:data); this feature module only consumes it.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.READ_VOICEMAIL" />
+    <uses-permission android:name="android.permission.WRITE_VOICEMAIL" />
+
+    <!-- Needed to fire the carrier-voicemail dial fallback when VVM is unsupported. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+</manifest>

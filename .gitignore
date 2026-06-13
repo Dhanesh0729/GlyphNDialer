@@ -1,0 +1,57 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+# Gradle files
+.gradle/
+# Keep the version catalog and wrapper config tracked
+!gradle/libs.versions.toml
+!gradle/wrapper/gradle-wrapper.properties
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+*.ipr
+*.iws
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystore files (NEVER commit signing material)
+*.jks
+*.keystore
+keystore.properties
+
+# Secrets
+secrets.properties
+nothing_api_key.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# NDK
+obj/
+
+# Kotlin
+.kotlin/

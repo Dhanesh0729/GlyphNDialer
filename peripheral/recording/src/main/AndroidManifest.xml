@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Local-side capture (Tier C) and the precondition for any recording. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Foreground-service permissions for an ongoing recording (Android 14+ typed). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Tier A (system call audio) runs alongside the call; declare the phoneCall type so
+         the same service can attach to the call session where the platform/OEM allows it. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+
+        <!--
+          The recording foreground service. Declared with BOTH microphone and phoneCall
+          types: microphone covers Tier B/C local+VoIP capture; phoneCall is used only on
+          devices/OEM builds that actually expose call audio for Tier A. The runtime picks
+          the started type honestly via the resolved tier (see RecordingForegroundService).
+        -->
+        <service
+            android:name=".service.RecordingForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|phoneCall" />
+
+    </application>
+
+</manifest>

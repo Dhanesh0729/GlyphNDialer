@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+    :feature:contacts manifest.
+
+    The Contacts feature reads device contacts (list, search, detail, recent
+    interactions) and writes them (create/edit, set-default-number) via
+    android.provider.ContactsContract. Per CONVENTIONS.md §8 each module declares
+    the permissions it needs; manifest merging combines them into :app, which owns
+    the runtime-request flow (with rationale UI). WRITE_CONTACTS mutations and the
+    call-history surfaced on the detail screen only take effect with the relevant
+    grants (and the default-dialer role gates call-log read). Favorites + speed-dial
+    persistence is local Room (owned by :core:data) and needs no extra permission.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+</manifest>

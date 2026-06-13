@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Nothing GDK API key, surfaced to the GDK via the NothingKey meta-data in the
+      manifest (BUILD_SPEC §17.1).
+
+      The default value "test" is valid ONLY for debug builds and ONLY when the
+      Glyph debug toggle is enabled on-device:
+          adb shell settings put global nt_glyph_interface_debug_enable 1
+      (the toggle auto-expires after 48h).
+
+      RELEASE: register an app at the Nothing Developer Programme and replace this
+      value with the issued key (or override it via a resource overlay / flavor).
+    -->
+    <string name="nothing_api_key" translatable="false">test</string>
+</resources>

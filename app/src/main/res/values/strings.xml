@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<resources>
+    <string name="app_name">Glyph Dialer</string>
+
+    <!--
+      Nothing Glyph Developer Kit API key (BUILD_SPEC §17.1). The :peripheral:glyph
+      manifest declares the NothingKey meta-data that reads this string; we provide the
+      resource here in the application module so it resolves at merge time.
+
+      "test" is accepted by the GDK for debug builds (auto-expires after 48h). REPLACE
+      with a real key issued by the Nothing Developer Programme for production. On
+      non-Nothing hardware the key is irrelevant — the GlyphController no-ops (§9).
+    -->
+    <string name="nothing_api_key" translatable="false">test</string>
+</resources>

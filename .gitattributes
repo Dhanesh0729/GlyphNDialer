@@ -1,0 +1,46 @@
+# Normalize line endings across platforms.
+# Git auto-detects text vs binary and normalizes to LF in the repo on commit.
+* text=auto
+
+# Scripts: pin line endings so the wrapper works regardless of checkout OS.
+*.bat        text eol=crlf
+*.cmd        text eol=crlf
+gradlew      text eol=lf
+*.sh         text eol=lf
+
+# Source / config — explicitly text so diffs and merges behave.
+*.kt         text
+*.kts        text
+*.java       text
+*.xml        text
+*.gradle     text
+*.properties text
+*.toml       text
+*.yml        text eol=lf
+*.yaml       text eol=lf
+*.json       text
+*.md         text
+*.pro        text
+*.template   text
+
+# Binaries — never normalize or diff as text.
+*.jar        binary
+*.aar        binary
+*.so         binary
+*.keystore   binary
+*.jks        binary
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.webp       binary
+*.ttf        binary
+*.otf        binary
+*.ico        binary
+*.tflite     binary
+*.bin        binary
+
+# GitHub linguist: don't count the generated wrapper jar/scripts in language stats.
+gradle/wrapper/gradle-wrapper.jar linguist-vendored
+gradlew      linguist-vendored
+gradlew.bat  linguist-vendored

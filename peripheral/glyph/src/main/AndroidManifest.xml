@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  :peripheral:glyph manifest.
+
+  Declares the Nothing Glyph enable permission and the NothingKey meta-data the
+  GDK reads at GlyphManager.init() time. These merge into :app at build time
+  (CONVENTIONS.md §8 / BUILD_SPEC §17.1, §20).
+
+  HONESTY PRINCIPLE (§9/§17.6): declaring the permission/meta-data here is harmless
+  on non-Nothing devices — the OS simply ignores an unknown permission, and the
+  controllers no-op when the GDK classes / a Nothing device are absent.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Required to drive the Glyph Interface on Nothing hardware (Android 14+). -->
+    <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
+
+    <application>
+        <!--
+          API key issued by the Nothing Developer Programme. Debug builds may use
+          "test" (BUILD_SPEC §17.1). REPLACE @string/nothing_api_key with your real
+          key for release — see strings.xml.
+        -->
+        <meta-data
+            android:name="NothingKey"
+            android:value="@string/nothing_api_key" />
+    </application>
+
+</manifest>

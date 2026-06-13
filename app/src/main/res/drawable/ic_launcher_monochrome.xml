@@ -1,0 +1,24 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Themed-icon (Android 13+) monochrome layer: the dot-matrix mark in a single tint so
+  the launcher can recolor it to match the wallpaper. All dots use white; the system
+  applies the monochrome tint.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108"
+    android:tint="@color/glyph_white">
+
+    <group>
+        <path android:fillColor="#FFFFFFFF" android:pathData="M38,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M54,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M70,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M38,54 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M70,54 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M38,70 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M54,70 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M70,70 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    </group>
+</vector>

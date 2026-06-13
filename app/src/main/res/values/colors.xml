@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Launch/splash + adaptive-icon colors only. The live Compose UI palette lives in
+  :core:designsystem (GlyphColors); these XML colors exist purely for the pre-Compose
+  launch theme and the adaptive launcher icon (CONVENTIONS.md §6, monochrome brand).
+-->
+<resources>
+    <!-- Monochrome brand base (matches GlyphColors dark surface / text). -->
+    <color name="glyph_black">#FF000000</color>
+    <color name="glyph_white">#FFEDEDED</color>
+    <color name="glyph_red">#FFD7263D</color>
+
+    <!-- Adaptive icon background (the dot-matrix mark sits on this). -->
+    <color name="ic_launcher_background">#FF000000</color>
+</resources>

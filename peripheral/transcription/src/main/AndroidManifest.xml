@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Permissions this module's engines need. Requested at runtime by :app/feature
+      (CONVENTIONS.md §8); merged into the app manifest.
+    -->
+
+    <!-- AndroidSpeechRecognizerEngine + any on-device engine capturing the mic. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- CloudSttEngine network path (optional, behind a flag). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+      Android 11+ package visibility: SpeechRecognizer.isRecognitionAvailable() and
+      createSpeechRecognizer() need to see the on-device recognition service. Without
+      this <queries> entry the recognizer is reported unavailable on API 30+ even when
+      a recognizer is installed. We honestly fall back when it truly is absent (§2.4).
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+</manifest>

@@ -1,0 +1,22 @@
+# local.properties TEMPLATE — machine-specific paths. DO NOT COMMIT the real file.
+#
+# HOW TO USE
+#   1. Copy this file to `local.properties` in the project root.
+#   2. Set sdk.dir to your Android SDK location.
+#   3. local.properties is gitignored (see .gitignore) — never commit it.
+#
+# Android Studio normally writes local.properties for you on first open; this
+# template is here for headless / CI / fresh-clone setups.
+#
+# Typical sdk.dir values:
+#   Windows : C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
+#   macOS   : /Users/<you>/Library/Android/sdk
+#   Linux   : /home/<you>/Android/Sdk
+#
+# Note: backslashes on Windows must be escaped (\\) in a Java .properties file.
+
+sdk.dir=/path/to/Android/Sdk
+
+# Optional: pin a specific NDK if a native module (e.g. on-device Whisper JNI)
+# requires it. Leave unset to use the SDK-managed default.
+# ndk.dir=/path/to/Android/Sdk/ndk/<version>

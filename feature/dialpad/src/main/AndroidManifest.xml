@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Permissions implied by the dialpad's behaviour (BUILD_SPEC §8, §20). These are
+      merged into :app's manifest; the runtime request + rationale UI live in :app /
+      the host screen. CALL_PHONE is needed to place the outgoing call; the contacts /
+      call-log reads back the live T9 smart-search candidate set.
+    -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+
+</manifest>

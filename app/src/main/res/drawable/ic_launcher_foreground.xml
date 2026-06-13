@@ -1,0 +1,42 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Glyph Dialer launcher foreground: a simple monochrome dot-matrix mark — a 3x3 grid of
+  dots forming a stylized "G/phone" glyph, in brand white on the black adaptive
+  background. Drawn on a 108dp adaptive canvas; the central 72dp is the safe zone.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Row 1 -->
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M38,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M54,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="@color/glyph_red"
+        android:pathData="M70,38 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+
+    <!-- Row 2 -->
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M38,54 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M70,54 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+
+    <!-- Row 3 -->
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M38,70 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M54,70 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="@color/glyph_white"
+        android:pathData="M70,70 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+</vector>

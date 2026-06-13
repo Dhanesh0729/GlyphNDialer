@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  :peripheral:webrtc manifest.
+
+  In-app VoIP/video layer (BUILD_SPEC §11). These permissions merge into :app at
+  build time (CONVENTIONS.md §8). The actual runtime requests are made by the
+  in-call feature; declaring them here keeps the capability self-contained.
+
+  HONESTY PRINCIPLE (§2.3/§9): this is in-app WebRTC VoIP video ONLY — it is NOT
+  carrier video and cannot upgrade a cellular call. CAMERA/RECORD_AUDIO and the
+  camera/microphone foreground-service types support the in-app media session.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Signaling (Ktor WebSocket) + ICE/STUN/TURN connectivity. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Local media capture for the in-app VoIP session. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!--
+      Foreground-service types so the self-managed VoIP session (owned by :telecom)
+      may keep camera + microphone alive while the call is in the foreground.
+      FOREGROUND_SERVICE_PHONE_CALL itself is declared by :telecom; here we declare
+      the camera/microphone types this media layer needs.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <!-- A camera is optional: audio-only VoIP must work on camera-less devices. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
+</manifest>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Legacy auto-backup rules (Android 11 and below). Exclude sensitive call data —
+  recordings/transcripts/notes DB and the audio files — from cloud backup. Settings
+  (DataStore) may back up.
+-->
+<full-backup-content>
+    <exclude domain="database" path="glyph_dialer.db" />
+    <exclude domain="file" path="recordings/" />
+    <exclude domain="file" path="transcripts/" />
+</full-backup-content>

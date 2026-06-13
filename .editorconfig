@@ -1,0 +1,49 @@
+# EditorConfig — https://editorconfig.org
+# Kotlin official style, ktlint-compatible. This is the formatting source of
+# truth for Glyph Dialer; ktlint/detekt and Android Studio both honour it.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+[*.{kt,kts}]
+indent_size = 4
+# Kotlin official code style (matches kotlin.code.style=official in gradle.properties).
+ktlint_code_style = ktlint_official
+# Wildcard imports are disallowed except where the ecosystem effectively requires
+# them (Compose previews/material symbols can balloon import lists).
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ktlint_standard_no-wildcard-imports = enabled
+ktlint_standard_filename = enabled
+# Compose @Composable functions are PascalCase by convention; relax the
+# function-naming rule so ktlint does not flag them.
+ktlint_function_naming_ignore_when_annotated_with = Composable, Preview, Test
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.{xml}]
+indent_size = 4
+
+[*.{json,toml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+[*.bat]
+end_of_line = crlf
+
+[gradlew]
+end_of_line = lf
+
+[Makefile]
+indent_style = tab

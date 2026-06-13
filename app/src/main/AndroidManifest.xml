@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-License-Identifier: Apache-2.0
+
+  :app manifest — the merge target for the whole project (CONVENTIONS.md §8).
+
+  Manifest merging pulls in the telecom services (GlyphInCallService,
+  GlyphConnectionService, GlyphCallScreeningService), the peripheral permissions, and
+  the Glyph NothingKey meta-data from :peripheral:glyph. We additionally declare the
+  FULL permission set here for clarity / single-point auditability (§20). Permissions
+  are idempotent across merge, so re-declaring those already in a library manifest is
+  harmless.
+
+  We do NOT re-declare the NothingKey meta-data here — :peripheral:glyph already owns
+  it (avoids a duplicate <meta-data> merge conflict). The nothing_api_key string lives
+  in this module's res/values/strings.xml so the resource resolves at merge time.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ===================== Permissions (BUILD_SPEC §20) ===================== -->
+    <!-- Telephony / telecom -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+
+    <!-- Contacts -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+
+    <!-- Call log (write gated by the default-dialer role) -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+
+    <!-- Audio / camera (recording + in-app video) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Voicemail -->
+    <uses-permission android:name="android.permission.READ_VOICEMAIL" />
+    <uses-permission android:name="android.permission.WRITE_VOICEMAIL" />
+
+    <!-- Notifications (incoming full-screen intent + ongoing call) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground services -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+
+    <!-- Networking (in-app WebRTC VoIP + signaling) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Nothing Glyph (no-op / ignored on non-Nothing devices, §9/§17.6). Also declared
+         by :peripheral:glyph; repeated here for the §20 audit list. -->
+    <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
+
+    <!-- A camera is optional: the app runs fine on camera-less devices (video is
+         in-app-only and gated by CapabilityFlags.cameraAvailable, §9/§11). -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <application
+        android:name=".GlyphDialerApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.GlyphDialer.Launch"
+        tools:targetApi="35">
+
+        <!--
+          The single Activity. Declared as a default-dialer-capable launcher so the OS
+          can offer Glyph Dialer for the RoleManager.ROLE_DIALER role and route DIAL /
+          tel: / voicemail: / CALL_BUTTON intents to it (BUILD_SPEC §7.1, §7.3).
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.GlyphDialer.Launch"
+            android:windowSoftInputMode="adjustResize">
+
+            <!-- Home-screen launcher entry. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- DIAL with no data (opens the dialpad). -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- DIAL with a tel: number to pre-fill. -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+
+            <!-- VIEW a tel:/voicemail: URI (default-dialer responsibilities). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
+                <data android:scheme="voicemail" />
+            </intent-filter>
+
+            <!-- Hardware/assistant call button. -->
+            <intent-filter>
+                <action android:name="android.intent.action.CALL_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          On-demand WorkManager initialization: GlyphDialerApp implements
+          Configuration.Provider so it can supply the HiltWorkerFactory. Remove the
+          default androidx.startup WorkManagerInitializer so it does not initialize
+          WorkManager before us (Hilt-work setup requirement).
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
+    </application>
+
+</manifest>

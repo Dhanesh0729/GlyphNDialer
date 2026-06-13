@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Thin launch/splash theme only. The real, themed UI is rendered by GlyphTheme
+  (Compose, :core:designsystem). This Material parent exists for the window background
+  shown before the first frame and for the system-bar styling at launch
+  (CONVENTIONS.md §6). Monochrome brand: black window, light status-bar icons.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.GlyphDialer.Launch" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/glyph_black</item>
+        <item name="android:statusBarColor">@color/glyph_black</item>
+        <item name="android:navigationBarColor">@color/glyph_black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
+    </style>
+
+</resources>
