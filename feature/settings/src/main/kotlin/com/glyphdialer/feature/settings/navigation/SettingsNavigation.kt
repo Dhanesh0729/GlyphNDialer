@@ -8,17 +8,19 @@ import androidx.navigation.compose.composable
 import com.glyphdialer.feature.settings.SettingsRoute
 import com.glyphdialer.feature.settings.about.AboutRoute
 import com.glyphdialer.feature.settings.blocked.BlockedNumbersRoute
+import com.glyphdialer.feature.settings.licenses.LicensesRoute
 
 /**
  * Navigation surface for :feature:settings (CONVENTIONS.md §7; BUILD_SPEC §21).
  *
- * The feature owns three destinations — the settings root, the blocked-numbers
- * sub-screen, and the about/legal sub-screen — registered together by [settingsGraph].
- * Internal navigation (root → blocked / root → about) is handled inside the graph via
- * the supplied [NavController]. Actions that LEAVE the feature (speed-dial assignment,
- * recordings storage/export, the platform open-source-licenses screen) are delegated
- * to the :app host through callbacks, so the feature stays within its allowed
- * dependency set (§3) and never imports another feature, :telecom, or :peripheral:*.
+ * The feature owns four destinations — the settings root, the blocked-numbers
+ * sub-screen, the about/legal sub-screen, and the open-source-licenses sub-screen —
+ * registered together by [settingsGraph]. Internal navigation between them is handled
+ * inside the graph via the supplied [NavController]. The only action that LEAVES the
+ * feature is speed-dial assignment (which lives in :feature:contacts/:feature:dialpad
+ * territory) — it is delegated to the :app host through a callback, so the feature
+ * stays within its allowed dependency set (§3) and never imports another feature,
+ * :telecom, or :peripheral:*.
  */
 
 /** Top-level route constants exposed for the :app NavHost (CONVENTIONS.md §7). */
@@ -31,6 +33,9 @@ object SettingsRoutes {
 
     /** The about / legal / attribution sub-screen. */
     const val ABOUT: String = "settings/about"
+
+    /** The open-source-licenses sub-screen. */
+    const val LICENSES: String = "settings/licenses"
 }
 
 /** Type-safe navigation to the settings root. */
@@ -46,25 +51,23 @@ fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
  * @param onNavigateUp pop the current settings destination (typically [NavController.popBackStack]).
  * @param onOpenSpeedDial host-provided speed-dial assignment surface (lives outside this
  *   feature; the :app host routes to :feature:dialpad/:feature:contacts territory).
- * @param onOpenStorageExport host-provided recordings storage/export surface.
- * @param onOpenOpenSourceLicenses host-provided platform open-source-licenses screen
- *   (e.g. `OssLicensesMenuActivity`), launched as an Intent by the host.
  */
 fun NavGraphBuilder.settingsGraph(
     navController: NavController,
     onNavigateUp: () -> Unit,
     onOpenSpeedDial: () -> Unit,
-    onOpenStorageExport: () -> Unit,
-    onOpenOpenSourceLicenses: () -> Unit,
 ) {
+    // Open-source licenses is an in-feature destination (no external Play-Services
+    // dependency): the root and the about screen both route to it internally.
+    val openLicenses = { navController.navigate(SettingsRoutes.LICENSES); Unit }
+
     composable(route = SettingsRoutes.ROOT) {
         SettingsRoute(
             onNavigateUp = onNavigateUp,
             onOpenBlockedNumbers = { navController.navigate(SettingsRoutes.BLOCKED_NUMBERS) },
             onOpenAbout = { navController.navigate(SettingsRoutes.ABOUT) },
             onOpenSpeedDial = onOpenSpeedDial,
-            onOpenStorageExport = onOpenStorageExport,
-            onOpenOpenSourceLicenses = onOpenOpenSourceLicenses,
+            onOpenOpenSourceLicenses = openLicenses,
         )
     }
 
@@ -77,7 +80,13 @@ fun NavGraphBuilder.settingsGraph(
     composable(route = SettingsRoutes.ABOUT) {
         AboutRoute(
             onNavigateUp = { navController.popBackStack() },
-            onOpenOpenSourceLicenses = onOpenOpenSourceLicenses,
+            onOpenOpenSourceLicenses = openLicenses,
+        )
+    }
+
+    composable(route = SettingsRoutes.LICENSES) {
+        LicensesRoute(
+            onNavigateUp = { navController.popBackStack() },
         )
     }
 }

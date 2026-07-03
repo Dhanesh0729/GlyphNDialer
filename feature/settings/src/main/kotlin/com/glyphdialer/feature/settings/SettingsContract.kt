@@ -98,7 +98,6 @@ sealed interface SettingsEvent {
     data class SetGlyphRecordingIndicator(val enabled: Boolean) : SettingsEvent
 
     // ---- Calls ---------------------------------------------------------------------
-    data class SetDefaultSim(val subscriptionId: Int?) : SettingsEvent
     data class SetCallerIdSpam(val enabled: Boolean) : SettingsEvent
 
     // ---- Recording -----------------------------------------------------------------
@@ -124,11 +123,10 @@ sealed interface SettingsEvent {
     /** Account type filter (e.g. "com.google"), or null for "all accounts". */
     data class SetContactsAccountFilter(val accountType: String?) : SettingsEvent
 
-    // ---- Navigation requests (delegated to :app via effects) -----------------------
+    // ---- Navigation requests -------------------------------------------------------
     data object OpenBlockedNumbers : SettingsEvent
     data object OpenSpeedDial : SettingsEvent
     data object OpenAbout : SettingsEvent
-    data object OpenStorageExport : SettingsEvent
     data object OpenOpenSourceLicenses : SettingsEvent
 
     // ---- Misc ----------------------------------------------------------------------
@@ -136,11 +134,10 @@ sealed interface SettingsEvent {
 }
 
 /**
- * One-shot effects. Navigation to sub-screens that belong to OTHER features
- * (speed-dial assignment lives in :feature:contacts/:feature:dialpad territory;
- * storage/export lives in :feature:recording-adjacent surfaces) and platform
- * intents (OSS license activity) are delegated to the :app host so this feature
- * stays inside its allowed dependency set (§3).
+ * One-shot effects. In-feature sub-screens (blocked numbers, about, open-source
+ * licenses) are navigated to via the host [NavController], while speed-dial assignment
+ * (which lives in :feature:contacts/:feature:dialpad territory) is delegated to the
+ * :app host so this feature stays inside its allowed dependency set (§3).
  */
 sealed interface SettingsEffect {
     /** Navigate to the in-feature blocked-numbers sub-screen. */
@@ -152,10 +149,7 @@ sealed interface SettingsEffect {
     /** Ask the host to open the speed-dial assignment surface. */
     data object OpenSpeedDial : SettingsEffect
 
-    /** Ask the host to open the recordings storage/export surface. */
-    data object OpenStorageExport : SettingsEffect
-
-    /** Ask the host to show the platform open-source-licenses screen. */
+    /** Navigate to the in-feature open-source-licenses sub-screen. */
     data object OpenOpenSourceLicenses : SettingsEffect
 
     /** Show a transient message (snackbar/toast). */

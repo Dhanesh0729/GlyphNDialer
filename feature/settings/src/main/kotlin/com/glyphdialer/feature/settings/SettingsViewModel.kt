@@ -117,7 +117,6 @@ class SettingsViewModel @Inject constructor(
                 mutate { it.copy(glyphRecordingIndicator = event.enabled) }
 
             // ---- Calls ---------------------------------------------------------------
-            is SettingsEvent.SetDefaultSim -> mutate { it.copy(defaultSimSubscriptionId = event.subscriptionId) }
             is SettingsEvent.SetCallerIdSpam -> mutate { it.copy(callerIdSpamEnabled = event.enabled) }
 
             // ---- Recording -----------------------------------------------------------
@@ -140,7 +139,6 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.OpenBlockedNumbers -> emit(SettingsEffect.NavigateToBlockedNumbers)
             SettingsEvent.OpenAbout -> emit(SettingsEffect.NavigateToAbout)
             SettingsEvent.OpenSpeedDial -> emit(SettingsEffect.OpenSpeedDial)
-            SettingsEvent.OpenStorageExport -> emit(SettingsEffect.OpenStorageExport)
             SettingsEvent.OpenOpenSourceLicenses -> emit(SettingsEffect.OpenOpenSourceLicenses)
 
             // ---- Misc ----------------------------------------------------------------

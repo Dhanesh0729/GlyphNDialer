@@ -17,30 +17,22 @@ class GlyphAppActionsTest {
         val messaged = mutableListOf<String>()
         val added = mutableListOf<String>()
         val details = mutableListOf<String>()
-        var storageOpened = 0
-        var licensesOpened = 0
 
         val actions = GlyphAppActions(
             dial = { dialed += it },
             message = { messaged += it },
             addContact = { added += it },
             openNumberDetails = { details += it },
-            openStorageExport = { storageOpened++ },
-            openOpenSourceLicenses = { licensesOpened++ },
         )
 
         actions.dial("+15551234567")
         actions.message("+15557654321")
         actions.addContact("100")
         actions.openNumberDetails("200")
-        actions.openStorageExport()
-        actions.openOpenSourceLicenses()
 
         assertThat(dialed).containsExactly("+15551234567")
         assertThat(messaged).containsExactly("+15557654321")
         assertThat(added).containsExactly("100")
         assertThat(details).containsExactly("200")
-        assertThat(storageOpened).isEqualTo(1)
-        assertThat(licensesOpened).isEqualTo(1)
     }
 }

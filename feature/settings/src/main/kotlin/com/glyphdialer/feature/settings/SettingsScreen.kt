@@ -59,8 +59,7 @@ import com.glyphdialer.feature.settings.component.TranscriptionGroup
  * @param onOpenBlockedNumbers navigate to the in-feature blocked-numbers sub-screen.
  * @param onOpenAbout navigate to the in-feature about/legal sub-screen.
  * @param onOpenSpeedDial host-provided speed-dial assignment surface (other feature).
- * @param onOpenStorageExport host-provided recordings storage/export surface.
- * @param onOpenOpenSourceLicenses host-provided platform OSS-license screen.
+ * @param onOpenOpenSourceLicenses navigate to the in-feature open-source-licenses screen.
  */
 @Composable
 fun SettingsRoute(
@@ -68,7 +67,6 @@ fun SettingsRoute(
     onOpenBlockedNumbers: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenSpeedDial: () -> Unit,
-    onOpenStorageExport: () -> Unit,
     onOpenOpenSourceLicenses: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -82,7 +80,6 @@ fun SettingsRoute(
                 SettingsEffect.NavigateToBlockedNumbers -> onOpenBlockedNumbers()
                 SettingsEffect.NavigateToAbout -> onOpenAbout()
                 SettingsEffect.OpenSpeedDial -> onOpenSpeedDial()
-                SettingsEffect.OpenStorageExport -> onOpenStorageExport()
                 SettingsEffect.OpenOpenSourceLicenses -> onOpenOpenSourceLicenses()
                 is SettingsEffect.ShowMessage -> snackbarHostState.showSnackbar(effect.message)
             }

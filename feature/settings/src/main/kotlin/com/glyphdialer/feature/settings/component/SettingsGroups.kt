@@ -204,16 +204,6 @@ fun CallsGroup(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingsSectionHeader("Calls")
 
-        // Default SIM is meaningful only on dual-SIM. Enumerating SIMs needs
-        // SubscriptionManager, which lives outside this feature's dependency set (§3),
-        // so the current selection is shown READ-ONLY here; the host drives the actual
-        // picker (and persists via SettingsEvent.SetDefaultSim) when it wires it.
-        SettingsStatusRow(
-            title = "Default SIM",
-            subtitle = "Used for outgoing calls on dual-SIM devices",
-            value = prefs.defaultSimSubscriptionId?.let { "SIM $it" } ?: "Ask each time",
-        )
-
         SettingsNavigationRow(
             title = "Speed dial",
             subtitle = "Assign contacts to dialpad keys 2–9",
@@ -290,13 +280,6 @@ fun RecordingGroup(
             selected = prefs.retentionWindow,
             onSelect = { onEvent(SettingsEvent.SetRetentionWindow(it)) },
             label = SettingsLabels::retention,
-        )
-
-        SettingsNavigationRow(
-            title = "Storage & export",
-            subtitle = "Browse, play, and export recordings",
-            enabled = prefs.recordingEnabled,
-            onClick = { onEvent(SettingsEvent.OpenStorageExport) },
         )
     }
 }

@@ -151,8 +151,6 @@ fun GlyphApp(
                 navController = navController,
                 onNavigateUp = { navController.popBackStack() },
                 onOpenSpeedDial = { navController.navigate(ContactsRoutes.LIST) },
-                onOpenStorageExport = actions.openStorageExport,
-                onOpenOpenSourceLicenses = actions.openOpenSourceLicenses,
             )
 
             // -------------------- In-call (full-screen) --------------------

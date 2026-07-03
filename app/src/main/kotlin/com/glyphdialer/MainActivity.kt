@@ -160,8 +160,6 @@ class MainActivity : ComponentActivity() {
         message = ::composeSms,
         addContact = ::insertContact,
         openNumberDetails = ::placeCall, // tap-to-call-back from a Recents row.
-        openStorageExport = ::openStorageSettings,
-        openOpenSourceLicenses = ::openOpenSourceLicenses,
     )
 
     /**
@@ -195,21 +193,6 @@ class MainActivity : ComponentActivity() {
             putExtra(ContactsContract.Intents.Insert.PHONE, number)
         }
         startActivitySafely(intent, "insert-contact")
-    }
-
-    private fun openStorageSettings() {
-        // App's storage settings; a real recordings export surface is a follow-up.
-        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", packageName, null)
-        }
-        startActivitySafely(intent, "storage-export")
-    }
-
-    private fun openOpenSourceLicenses() {
-        // TODO: wire OssLicensesMenuActivity (play-services-oss-licenses) once added to
-        // the catalog. For now, surface the about page is handled in-app by the
-        // settings feature; this is a no-op host hook.
-        Timber.i("Open-source licenses screen not yet wired (see TODO)")
     }
 
     private fun startActivitySafely(intent: Intent, what: String) {
