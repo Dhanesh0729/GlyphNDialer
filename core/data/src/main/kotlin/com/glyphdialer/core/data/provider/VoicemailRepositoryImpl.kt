@@ -58,6 +58,7 @@ class VoicemailRepositoryImpl @Inject constructor(
         }.getOrDefault(false)
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
     private fun TelephonyManager.isVoiceMailNumberAvailable(): Boolean =
         runCatching { !voiceMailNumber.isNullOrBlank() }.getOrDefault(false)
 
@@ -67,6 +68,7 @@ class VoicemailRepositoryImpl @Inject constructor(
             .mapLatest { withContext(ioDispatcher) { queryVoicemails() } }
             .flowOn(ioDispatcher)
 
+    @android.annotation.SuppressLint("MissingPermission")
     override suspend fun carrierVoicemailNumber(): AppResult<String?> =
         appResultOfSuspend {
             withContext(ioDispatcher) {

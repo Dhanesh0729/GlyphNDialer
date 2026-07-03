@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -73,7 +74,7 @@ fun FastScrollIndex(
             }
             .pointerInput(present, railHeightPx) {
                 // A simple tap (no drag) should also jump to the letter.
-                androidx.compose.foundation.gestures.detectTapGestures { offset -> selectAt(offset.y) }
+                detectTapGestures(onTap = { offset -> selectAt(offset.y) })
             }
             .semantics { contentDescription = "Alphabet fast-scroll index" },
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),

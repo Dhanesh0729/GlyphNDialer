@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
  * Canonical PCM audio format shared by every tier recorder so the downstream pipeline
  * (encryption, WAV header, level metering) is uniform. 16-bit signed little-endian PCM.
  */
-internal data class AudioFormatSpec(
+data class AudioFormatSpec(
     val sampleRateHz: Int,
     val channelCount: Int,
     val bitsPerSample: Int = 16,
@@ -33,7 +33,7 @@ internal data class AudioFormatSpec(
  * [com.glyphdialer.peripheral.recording.storage.EncryptedRecordingStore] wraps) and emit
  * normalized amplitude (0f..1f) for the waveform/Glyph mirror.
  */
-internal interface TierCaptureEngine {
+interface TierCaptureEngine {
 
     /** The tier this engine implements (for honest reporting). */
     val tier: RecordingTier
@@ -63,7 +63,7 @@ internal interface TierCaptureEngine {
  * only know how to push bytes. Keeping it tiny lets the VoIP tier feed externally-sourced
  * PCM (from :peripheral:webrtc) through the same path.
  */
-internal interface PcmSink {
+interface PcmSink {
     /** Append [length] bytes from [data] starting at [offset]. */
     suspend fun write(data: ByteArray, offset: Int, length: Int)
 }

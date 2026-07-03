@@ -16,6 +16,7 @@ import com.glyphdialer.core.domain.repository.CallRecorder
 import com.glyphdialer.core.domain.repository.CapabilityRepository
 import com.glyphdialer.core.domain.repository.TranscriptionEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -10,7 +10,10 @@
   on non-Nothing devices — the OS simply ignores an unknown permission, and the
   controllers no-op when the GDK classes / a Nothing device are absent.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-sdk tools:overrideLibrary="com.nothing.thirdparty" />
 
     <!-- Required to drive the Glyph Interface on Nothing hardware (Android 14+). -->
     <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />

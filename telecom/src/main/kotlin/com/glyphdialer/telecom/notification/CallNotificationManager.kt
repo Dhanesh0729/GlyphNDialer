@@ -13,6 +13,10 @@ import androidx.core.app.NotificationManagerCompat
 import com.glyphdialer.core.common.Constants
 import com.glyphdialer.core.domain.model.CallModel
 import com.glyphdialer.core.domain.model.CallState
+import com.glyphdialer.telecom.service.GlyphInCallService
+import com.glyphdialer.telecom.CallRegistry
+import com.glyphdialer.telecom.R
+import com.glyphdialer.core.domain.model.AudioRoute
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -64,13 +68,17 @@ class CallNotificationManager @Inject constructor(
 
     // --- Builders --------------------------------------------------------------
 
+    @android.annotation.SuppressLint("MissingPermission")
     private fun postIncoming(call: CallModel) {
         if (!canPost()) return
         val title = call.displayName ?: call.spamLabel ?: call.number.formatted
         val fullScreen = fullScreenPendingIntent()
+        val person = androidx.core.app.Person.Builder()
+            .setName(title)
+            .setImportant(true)
+            .build()
         val builder = NotificationCompat.Builder(context, Constants.NotificationChannels.INCOMING_CALL)
             .setSmallIcon(android.R.drawable.sym_call_incoming)
-            .setContentTitle(title)
             .setContentText(call.spamLabel?.let { "Suspected: $it" } ?: "Incoming call")
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -78,30 +86,68 @@ class CallNotificationManager @Inject constructor(
             .setAutoCancel(false)
             .setFullScreenIntent(fullScreen, true)
             .setContentIntent(contentPendingIntent(showDialpad = false))
+            .setStyle(
+                NotificationCompat.CallStyle.forIncomingCall(
+                    person,
+                    actionPendingIntent(GlyphInCallService.ACTION_DECLINE, call.id),
+                    actionPendingIntent(GlyphInCallService.ACTION_ANSWER, call.id)
+                )
+            )
         runCatching { manager.notify(Constants.NotificationIds.INCOMING_CALL, builder.build()) }
         manager.cancel(Constants.NotificationIds.ONGOING_CALL)
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
     private fun postOngoing(call: CallModel) {
         if (!canPost()) return
         manager.cancel(Constants.NotificationIds.INCOMING_CALL)
         val title = call.displayName ?: call.number.formatted
+        val person = androidx.core.app.Person.Builder()
+            .setName(title)
+            .setImportant(true)
+            .build()
         val text = when (call.state) {
             CallState.HOLDING -> "On hold"
             CallState.DIALING, CallState.CONNECTING -> "Dialing…"
             CallState.CONFERENCE -> "Conference"
             else -> if (call.isVoip) "VoIP call" else "Ongoing call"
         }
+        val isMuted = CallRegistry.audioState.value.isMuted
+        val isSpeaker = CallRegistry.audioState.value.route == AudioRoute.SPEAKER
+        
+        val muteIcon = if (isMuted) R.drawable.ic_unmute else R.drawable.ic_mute
+        val muteLabel = if (isMuted) "Unmute" else "Mute"
+        
+        val speakerIcon = if (isSpeaker) R.drawable.ic_earpiece else R.drawable.ic_speaker
+        val speakerLabel = if (isSpeaker) "Earpiece" else "Speaker"
+
         val builder = NotificationCompat.Builder(context, Constants.NotificationChannels.ONGOING_CALL)
             .setSmallIcon(android.R.drawable.sym_action_call)
-            .setContentTitle(title)
             .setContentText(text)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setOngoing(true)
-            // The precise monospaced timer is owned by the in-call UI (it has the exact
-            // connectTimeMillis); the notification just shows ongoing status.
             .setContentIntent(contentPendingIntent(showDialpad = false))
+            .addAction(
+                NotificationCompat.Action.Builder(
+                    muteIcon,
+                    muteLabel,
+                    actionPendingIntent(GlyphInCallService.ACTION_TOGGLE_MUTE, call.id)
+                ).build()
+            )
+            .addAction(
+                NotificationCompat.Action.Builder(
+                    speakerIcon,
+                    speakerLabel,
+                    actionPendingIntent(GlyphInCallService.ACTION_TOGGLE_SPEAKER, call.id)
+                ).build()
+            )
+            .setStyle(
+                NotificationCompat.CallStyle.forOngoingCall(
+                    person,
+                    actionPendingIntent(GlyphInCallService.ACTION_DISCONNECT, call.id)
+                )
+            )
         runCatching { manager.notify(Constants.NotificationIds.ONGOING_CALL, builder.build()) }
     }
 
@@ -112,13 +158,46 @@ class CallNotificationManager @Inject constructor(
      */
     fun buildOngoing(call: CallModel): Notification {
         ensureChannels()
+        val title = call.displayName ?: call.number.formatted
+        val person = androidx.core.app.Person.Builder()
+            .setName(title)
+            .setImportant(true)
+            .build()
+        val isMuted = CallRegistry.audioState.value.isMuted
+        val isSpeaker = CallRegistry.audioState.value.route == AudioRoute.SPEAKER
+        
+        val muteIcon = if (isMuted) R.drawable.ic_unmute else R.drawable.ic_mute
+        val muteLabel = if (isMuted) "Unmute" else "Mute"
+        
+        val speakerIcon = if (isSpeaker) R.drawable.ic_earpiece else R.drawable.ic_speaker
+        val speakerLabel = if (isSpeaker) "Earpiece" else "Speaker"
+
         return NotificationCompat.Builder(context, Constants.NotificationChannels.ONGOING_CALL)
             .setSmallIcon(android.R.drawable.sym_action_call)
-            .setContentTitle(call.displayName ?: call.number.formatted)
             .setContentText(if (call.isVoip) "VoIP call" else "Ongoing call")
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setOngoing(true)
             .setContentIntent(contentPendingIntent(showDialpad = false))
+            .addAction(
+                NotificationCompat.Action.Builder(
+                    muteIcon,
+                    muteLabel,
+                    actionPendingIntent(GlyphInCallService.ACTION_TOGGLE_MUTE, call.id)
+                ).build()
+            )
+            .addAction(
+                NotificationCompat.Action.Builder(
+                    speakerIcon,
+                    speakerLabel,
+                    actionPendingIntent(GlyphInCallService.ACTION_TOGGLE_SPEAKER, call.id)
+                ).build()
+            )
+            .setStyle(
+                NotificationCompat.CallStyle.forOngoingCall(
+                    person,
+                    actionPendingIntent(GlyphInCallService.ACTION_DISCONNECT, call.id)
+                )
+            )
             .build()
     }
 
@@ -127,6 +206,8 @@ class CallNotificationManager @Inject constructor(
     private fun inCallIntent(showDialpad: Boolean): Intent =
         Intent(IN_CALL_ACTION).apply {
             setPackage(context.packageName)
+            setClassName(context.packageName, "com.glyphdialer.MainActivity")
+            addCategory(Intent.CATEGORY_DEFAULT)
             data = android.net.Uri.parse(IN_CALL_DATA_URI)
             putExtra(EXTRA_SHOW_DIALPAD, showDialpad)
         }
@@ -151,6 +232,19 @@ class CallNotificationManager @Inject constructor(
 
     private fun pendingFlags(): Int =
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+
+    private fun actionPendingIntent(action: String, callId: String): PendingIntent {
+        val intent = Intent(context, GlyphInCallService::class.java).apply {
+            this.action = action
+            putExtra(GlyphInCallService.EXTRA_CALL_ID, callId)
+        }
+        return PendingIntent.getService(
+            context,
+            action.hashCode() + callId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
 
     // --- Channels --------------------------------------------------------------
 

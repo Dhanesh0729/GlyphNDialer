@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * Lifecycle (BUILD_SPEC §17.2):
  *   init(context, callback) → onServiceConnected → register(<deviceConstant>) →
- *   openSession() → build frames (Builder + buildChannel*/buildPeriod/buildCycles/…) →
+ *   openSession() → build frames (Builder + buildChannel/buildPeriod/buildCycles/…) →
  *   toggle()/animate() → closeSession() → unInit() on teardown.
  *
  * Frame building from raw channels is GDK-version-sensitive, so this controller keeps a
@@ -46,8 +46,8 @@ class GdkGlyphController(
     private var glyphManager: Any? = null
     private var managerClass: Class<*>? = null
 
-    /** Zone → GDK channel-name-set mapping; resolved lazily against the installed AAR. */
-    private val zoneChannels: Map<GlyphZone, List<String>> = buildZoneChannelMap()
+    /** Zone → GDK channel-int mapping; resolved when the service connects. */
+    private var zoneChannels: Map<GlyphZone, List<Int>> = emptyMap()
 
     private val choreographer = GlyphChoreographer(
         dispatcher = dispatcher,
@@ -134,53 +134,34 @@ class GdkGlyphController(
         val mgr = glyphManager ?: return
         val cls = managerClass ?: return
         try {
-            val deviceConst = registerDeviceConstant()
+            val glyphClass = Class.forName("com.nothing.ketchum.Glyph")
+            val numeric = detectNumericModel(glyphClass)
+            
+            val byNumeric = mapOf(
+                GlyphAvailability.DeviceConstants.PHONE_1 to "DEVICE_20111",
+                GlyphAvailability.DeviceConstants.PHONE_2 to "DEVICE_22111",
+                GlyphAvailability.DeviceConstants.PHONE_2A to "DEVICE_23111",
+                GlyphAvailability.DeviceConstants.PHONE_2A_PLUS to "DEVICE_23113",
+                GlyphAvailability.DeviceConstants.PHONE_3A to "DEVICE_24111",
+                GlyphAvailability.DeviceConstants.PHONE_4A to "DEVICE_25111",
+            )
+            val fieldName = byNumeric[numeric] ?: "DEVICE_23111"
+            val deviceConst = runCatching {
+                glyphClass.getField(fieldName).get(null) as String
+            }.getOrDefault("A142")
+
             // GlyphManager.register(String) — the constant is exposed on com.nothing.ketchum.Glyph
             cls.getMethod("register", String::class.java).invoke(mgr, deviceConst)
             registered.set(true)
             // GlyphManager.openSession()
             cls.getMethod("openSession").invoke(mgr)
             ready.set(true)
-            Timber.tag(TAG).i("GDK session open for device constant=%s", deviceConst)
+            Timber.tag(TAG).i("GDK session open for device constant=%s, numeric=%d", deviceConst, numeric)
+            buildZoneChannelMap(numeric.toString())
         } catch (t: Throwable) {
             Timber.tag(TAG).w(t, "GDK register/openSession failed")
             ready.set(false)
             registered.set(false)
-        }
-    }
-
-    private fun onServiceDisconnected() {
-        Timber.tag(TAG).w("GDK service disconnected")
-        ready.set(false)
-        registered.set(false)
-    }
-
-    /**
-     * Resolves the GDK device string constant for this model (BUILD_SPEC §17.2). The GDK
-     * exposes both `isXXXXX()` helpers and `DEVICE_XXXXX` string constants on
-     * `com.nothing.ketchum.Glyph`. We map the numeric model constants we know to those
-     * fields by best-effort name; if reflection can't find a match we fall back to the
-     * common Phone (1) constant rather than guessing dangerously.
-     */
-    private fun registerDeviceConstant(): String {
-        // Numeric model id → likely Glyph.DEVICE_* field name.
-        val byNumeric = mapOf(
-            GlyphAvailability.DeviceConstants.PHONE_1 to "DEVICE_20111",
-            GlyphAvailability.DeviceConstants.PHONE_2 to "DEVICE_22111",
-            GlyphAvailability.DeviceConstants.PHONE_2A to "DEVICE_23111",
-            GlyphAvailability.DeviceConstants.PHONE_2A_PLUS to "DEVICE_23113",
-            GlyphAvailability.DeviceConstants.PHONE_3A to "DEVICE_24111",
-            GlyphAvailability.DeviceConstants.PHONE_4A to "DEVICE_25111",
-        )
-        return try {
-            val glyphClass = Class.forName("com.nothing.ketchum.Glyph")
-            // Probe isXXXXX() helpers to find the active device, then read its DEVICE_* const.
-            val numeric = detectNumericModel(glyphClass)
-            val fieldName = byNumeric[numeric] ?: "DEVICE_20111"
-            glyphClass.getField(fieldName).get(null) as? String ?: numeric.toString()
-        } catch (t: Throwable) {
-            Timber.tag(TAG).w(t, "Could not resolve GDK device constant; defaulting Phone(1)")
-            GlyphAvailability.DeviceConstants.PHONE_1.toString()
         }
     }
 
@@ -200,7 +181,26 @@ class GdkGlyphController(
                 if (m.invoke(null) as? Boolean == true) return numeric
             }
         }
-        return GlyphAvailability.DeviceConstants.PHONE_1
+        
+        // Robust fallback based on Build.MODEL / Build.DEVICE
+        val model = android.os.Build.MODEL.orEmpty().lowercase()
+        val device = android.os.Build.DEVICE.orEmpty().lowercase()
+        return when {
+            model.contains("a142") || model.contains("2a") || device.contains("a142") || device.contains("2a") -> {
+                if (model.contains("plus") || device.contains("plus")) {
+                    GlyphAvailability.DeviceConstants.PHONE_2A_PLUS
+                } else {
+                    GlyphAvailability.DeviceConstants.PHONE_2A
+                }
+            }
+            model.contains("a065") || model.contains("phone (2)") || device.contains("a065") -> {
+                GlyphAvailability.DeviceConstants.PHONE_2
+            }
+            model.contains("a063") || model.contains("phone (1)") || device.contains("a063") -> {
+                GlyphAvailability.DeviceConstants.PHONE_1
+            }
+            else -> GlyphAvailability.DeviceConstants.PHONE_2A
+        }
     }
 
     private fun teardownManager() {
@@ -229,19 +229,26 @@ class GdkGlyphController(
             val cls = managerClass ?: return
             val brightness = (intensity.coerceIn(0f, 1f) * MAX_BRIGHTNESS).toInt()
             try {
-                val frameBuilderClass = Class.forName("com.nothing.ketchum.GlyphFrame\$Builder")
-                var builder: Any = frameBuilderClass.getConstructor(Context::class.java).newInstance(context)
+                var builder: Any = cls.getMethod("getGlyphFrameBuilder").invoke(mgr)
+                val frameBuilderClass = builder.javaClass
                 // buildChannel(int) per zone-channel; chained.
                 val channels = zones.flatMap { zoneChannels[it].orEmpty() }
                 val buildChannel = runCatching {
                     frameBuilderClass.getMethod("buildChannel", Int::class.javaPrimitiveType)
                 }.getOrNull()
                 if (buildChannel != null) {
-                    for (ch in channels) {
-                        val channelInt = resolveChannelInt(ch) ?: continue
+                    for (channelInt in channels) {
                         builder = buildChannel.invoke(builder, channelInt) ?: builder
                     }
                 }
+                
+                // Many GDK implementations require a period/cycles to be set, otherwise toggle() does nothing.
+                // We set a long period; the Choreographer will call turnOff() when it wants to end the frame.
+                runCatching {
+                    builder = frameBuilderClass.getMethod("buildPeriod", Int::class.javaPrimitiveType).invoke(builder, 10000) ?: builder
+                    builder = frameBuilderClass.getMethod("buildCycles", Int::class.javaPrimitiveType).invoke(builder, 1) ?: builder
+                }
+                
                 // buildPeriod(int)/buildCycles(int) are optional in the static-toggle path.
                 val frame = frameBuilderClass.getMethod("build").invoke(builder)
                 // GlyphManager.toggle(GlyphFrame) lights it; brightness applied where supported.
@@ -302,18 +309,59 @@ class GdkGlyphController(
      * Glyph.Code_22111, …). We list the Phone (1) "Code_20111" set as the representative
      * mapping; the real AAR drop-in should refine per model if pixel-perfect zones matter.
      */
-    private fun buildZoneChannelMap(): Map<GlyphZone, List<String>> {
-        val base = "com.nothing.ketchum.Glyph\$Code_20111"
-        return mapOf(
-            GlyphZone.TOP_LEFT to listOf("$base#A"),
-            GlyphZone.TOP_RIGHT to listOf("$base#B"),
-            GlyphZone.CAMERA_RING to listOf("$base#B"),
-            GlyphZone.CENTER to listOf("$base#C"),
-            GlyphZone.BOTTOM_LEFT to listOf("$base#D"),
-            GlyphZone.BOTTOM_CENTER to listOf("$base#E"),
-            GlyphZone.BOTTOM_RIGHT to listOf("$base#E"),
-            GlyphZone.ALL to listOf("$base#A", "$base#B", "$base#C", "$base#D", "$base#E"),
-        )
+    private fun onServiceDisconnected() {
+        Timber.tag(TAG).i("GDK service disconnected")
+        ready.set(false)
+        registered.set(false)
+    }
+
+    private fun buildZoneChannelMap(codeStr: String) {
+        val intMap = mutableMapOf<GlyphZone, MutableList<Int>>()
+        for (zone in GlyphZone.values()) {
+            intMap[zone] = mutableListOf()
+        }
+        
+        try {
+            val clsName = "com.nothing.ketchum.Glyph\$Code_$codeStr"
+            val c = Class.forName(clsName)
+            val fields = c.getDeclaredFields()
+            val allList = mutableListOf<Int>()
+            
+            for (f in fields) {
+                if (java.lang.reflect.Modifier.isStatic(f.modifiers)) {
+                    f.isAccessible = true
+                    val value = f.get(null) as? Int ?: continue
+                    val name = f.name.uppercase()
+                    allList.add(value)
+                    
+                    when {
+                        name.startsWith("A") -> {
+                            intMap[GlyphZone.TOP_LEFT]?.add(value)
+                        }
+                        name.startsWith("B") -> {
+                            intMap[GlyphZone.TOP_RIGHT]?.add(value)
+                            intMap[GlyphZone.CAMERA_RING]?.add(value)
+                        }
+                        name.startsWith("C") -> {
+                            intMap[GlyphZone.CENTER]?.add(value)
+                        }
+                        name.startsWith("D") -> {
+                            intMap[GlyphZone.BOTTOM_LEFT]?.add(value)
+                        }
+                        name.startsWith("E") -> {
+                            intMap[GlyphZone.BOTTOM_RIGHT]?.add(value)
+                            intMap[GlyphZone.BOTTOM_CENTER]?.add(value)
+                        }
+                    }
+                }
+            }
+            intMap[GlyphZone.ALL] = allList.distinct().toMutableList()
+            Timber.tag(TAG).i("Mapped Glyph zones reflectively for %s: %s", codeStr, intMap)
+        } catch (t: Throwable) {
+            Timber.tag(TAG).w(t, "Reflective buildZoneChannelMap failed for %s", codeStr)
+        }
+        
+        zoneChannels = intMap
     }
 
     /** Reflective dispatch for the dynamic-proxy GlyphManager.Callback. */

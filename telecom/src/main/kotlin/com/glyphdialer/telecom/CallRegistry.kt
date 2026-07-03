@@ -32,6 +32,9 @@ import java.util.concurrent.atomic.AtomicLong
  * before touching a Call (see TelecomRepositoryImpl). Reads of [calls]/[audioState]
  * are lock-free StateFlow snapshots.
  */
+import android.annotation.SuppressLint
+
+@SuppressLint("StaticFieldLeak")
 object CallRegistry {
 
     /** Stable, monotonically-increasing per-session call id (Call identity isn't serializable). */
@@ -83,7 +86,8 @@ object CallRegistry {
         val id = "call-${idSeq.incrementAndGet()}"
         callsById[id] = call
         idByCall[call] = id
-        Timber.tag(Constants.TAG).d("Call added id=%s state=%d", id, call.details.state)
+        val state = if (android.os.Build.VERSION.SDK_INT >= 31) call.details.state else call.state
+        Timber.tag(Constants.TAG).d("Call added id=%s state=%d", id, state)
         rebuild()
         return id
     }
@@ -201,6 +205,7 @@ object CallRegistry {
 
     // --- Mapping ---------------------------------------------------------------
 
+    @SuppressLint("MissingPermission")
     private fun mapAudioState(s: CallAudioState): AudioState {
         val supported = buildSet {
             val mask = s.supportedRouteMask

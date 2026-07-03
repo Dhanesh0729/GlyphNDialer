@@ -17,12 +17,15 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.rememberNavController
 import com.glyphdialer.core.domain.model.UserPreferences
 import com.glyphdialer.core.domain.usecase.ObservePreferencesUseCase
 import com.glyphdialer.core.designsystem.theme.GlyphTheme
 import com.glyphdialer.navigation.GlyphApp
 import com.glyphdialer.navigation.GlyphAppActions
+import com.glyphdialer.navigation.openInCall
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
@@ -49,8 +52,18 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var observePreferences: ObservePreferencesUseCase
 
+    private val intentFlow = MutableStateFlow<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Ensure Compose Navigation processes deep links when the activity is already running.
+        setIntent(intent)
+        intentFlow.value = intent
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        intentFlow.value = intent
 
         // Hot StateFlow of preferences so the theme recomposes on settings changes.
         val preferencesFlow = observePreferences().stateIn(
@@ -63,6 +76,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val prefs by preferencesFlow.collectAsStateWithLifecycle()
+            val currentIntent by intentFlow.collectAsStateWithLifecycle()
+            val navController = rememberNavController()
 
             // Request the default-dialer role once, the first time the UI is shown and
             // we don't already hold it. The launcher result simply logs the outcome —
@@ -75,7 +90,26 @@ class MainActivity : ComponentActivity() {
                 Timber.i("Default-dialer role request result: granted=%b", granted)
             }
 
+            val permissionsLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                Timber.i("POST_NOTIFICATIONS permission granted: %b", isGranted)
+            }
+
+            LaunchedEffect(currentIntent) {
+                val intent = currentIntent
+                if (intent != null && intent.action == "com.glyphdialer.action.IN_CALL") {
+                    navController.openInCall()
+                    intentFlow.value = null
+                }
+            }
+
             LaunchedEffect(Unit) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        permissionsLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
                 requestDefaultDialerRole { intent -> intent?.let(roleLauncher::launch) }
             }
 
@@ -85,7 +119,7 @@ class MainActivity : ComponentActivity() {
                 accent = prefs.accentColor,
                 glyphIntensity = prefs.glyphIntensity,
             ) {
-                GlyphApp(actions = actions)
+                GlyphApp(actions = actions, navController = navController)
             }
         }
     }

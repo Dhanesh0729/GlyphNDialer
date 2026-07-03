@@ -45,7 +45,7 @@ data class CallLogUiState(
 }
 
 /** Top-level filter for the call log (BUILD_SPEC §8 missed-only filter). */
-enum class CallLogFilter { ALL, MISSED }
+enum class CallLogFilter { ALL, MISSED, INCOMING, OUTGOING }
 
 /**
  * One display row: a contact (or bare number) plus the run of consecutive calls

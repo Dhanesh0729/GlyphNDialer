@@ -157,11 +157,12 @@ class EncryptedRecordingStore @Inject constructor(
         private var pcmBytesWritten: Long = 0L
         private var finalized = false
 
-        @Synchronized
         override suspend fun write(data: ByteArray, offset: Int, length: Int) {
-            if (finalized) return
-            pcmOut.write(data, offset, length)
-            pcmBytesWritten += length
+            synchronized(this) {
+                if (finalized) return
+                pcmOut.write(data, offset, length)
+                pcmBytesWritten += length
+            }
         }
 
         /** Bytes of raw PCM captured so far. */

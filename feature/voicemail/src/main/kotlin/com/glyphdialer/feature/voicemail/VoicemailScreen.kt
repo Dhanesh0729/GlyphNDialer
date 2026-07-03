@@ -234,7 +234,7 @@ internal object TestTags {
 
 private fun previewItem(
     id: Long,
-    name: String,
+    name: String?,
     read: Boolean,
     transcription: String?,
 ) = VoicemailItem(

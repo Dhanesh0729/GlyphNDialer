@@ -220,6 +220,7 @@ class GlyphChoreographer(
             coroutineContext.ensureActive()
             renderFrame(frame)
         }
+        renderer.clear()
     }
 
     /**

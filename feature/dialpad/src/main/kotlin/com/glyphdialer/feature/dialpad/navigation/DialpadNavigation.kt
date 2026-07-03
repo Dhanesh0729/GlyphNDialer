@@ -30,11 +30,13 @@ object DialpadRoute {
 fun NavGraphBuilder.dialpadGraph(
     onNavigateToAddContact: (number: String) -> Unit = {},
     onNavigateToSpeedDialAssignment: (slot: Int) -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     composable(route = DialpadRoute.ROUTE) {
         DialpadRouteScreen(
             onNavigateToAddContact = onNavigateToAddContact,
             onAssignSpeedDial = onNavigateToSpeedDialAssignment,
+            onNavigateToSettings = onNavigateToSettings,
         )
     }
 }

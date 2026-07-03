@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
       Permissions consumed by the data-layer providers/repositories. These are
@@ -14,8 +15,9 @@
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-    <uses-permission android:name="android.permission.READ_VOICEMAIL" />
-    <uses-permission android:name="android.permission.WRITE_VOICEMAIL" />
+    <!-- Voicemail Contract / Status (requires default-dialer or these system permissions) -->
+    <uses-permission android:name="com.android.voicemail.permission.READ_VOICEMAIL" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="com.android.voicemail.permission.WRITE_VOICEMAIL" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 

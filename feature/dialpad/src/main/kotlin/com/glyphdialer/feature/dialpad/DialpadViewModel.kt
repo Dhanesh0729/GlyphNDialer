@@ -43,6 +43,14 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import android.content.Context
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -59,7 +67,7 @@ import javax.inject.Inject
  * All construction is via constructor injection; dispatchers are injected, never
  * hard-coded. Fallible operations use the shared [com.glyphdialer.core.common.AppResult].
  */
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class DialpadViewModel @Inject constructor(
     private val t9Search: T9SearchUseCase,
@@ -73,7 +81,22 @@ class DialpadViewModel @Inject constructor(
     private val glyphController: GlyphController,
     observePreferences: ObservePreferencesUseCase,
     @Dispatcher(GlyphDispatcher.DEFAULT) private val defaultDispatcher: CoroutineDispatcher,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    private var toneGenerator: ToneGenerator? = null
+
+    private val vibrator = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+    }.getOrNull() ?: runCatching {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    }.getOrNull()
 
     /** Raw entered characters; the source of truth the rest of the state derives from. */
     private val entered = MutableStateFlow("")
@@ -161,6 +184,12 @@ class DialpadViewModel @Inject constructor(
                 Timber.w(it.error, "Capability refresh failed; using cached/default flags")
             }
         }
+
+        try {
+            toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to initialize ToneGenerator")
+        }
     }
 
     /** Single entry point for user intent (CONVENTIONS.md §5). */
@@ -184,6 +213,7 @@ class DialpadViewModel @Inject constructor(
         if (char !in DIALABLE) return
         entered.update { it + char }
         fireStroke(char)
+        playLocalFeedback(char)
     }
 
     /**
@@ -201,10 +231,50 @@ class DialpadViewModel @Inject constructor(
                     if (current.endsWith('0')) current.dropLast(1) + '+' else current + '+'
                 }
                 fireStroke('0')
+                playLocalFeedback('+')
             }
             '1' -> dialVoicemail()
             in '2'..'9' -> triggerSpeedDial(char - '0')
             else -> Unit
+        }
+    }
+
+    private fun playLocalFeedback(digit: Char) {
+        val tone = when (digit) {
+            '1' -> ToneGenerator.TONE_DTMF_1
+            '2' -> ToneGenerator.TONE_DTMF_2
+            '3' -> ToneGenerator.TONE_DTMF_3
+            '4' -> ToneGenerator.TONE_DTMF_4
+            '5' -> ToneGenerator.TONE_DTMF_5
+            '6' -> ToneGenerator.TONE_DTMF_6
+            '7' -> ToneGenerator.TONE_DTMF_7
+            '8' -> ToneGenerator.TONE_DTMF_8
+            '9' -> ToneGenerator.TONE_DTMF_9
+            '0' -> ToneGenerator.TONE_DTMF_0
+            '*' -> ToneGenerator.TONE_DTMF_S
+            '#' -> ToneGenerator.TONE_DTMF_P
+            else -> -1
+        }
+        if (tone != -1) {
+            runCatching {
+                toneGenerator?.startTone(tone, 120)
+            }.onFailure {
+                Timber.w(it, "Failed to play DTMF tone for %s", digit)
+            }
+        }
+        vibrator?.let { v ->
+            if (v.hasVibrator()) {
+                runCatching {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        v.vibrate(50)
+                    }
+                }.onFailure {
+                    Timber.w(it, "Failed to vibrate for dialpad click")
+                }
+            }
         }
     }
 
@@ -383,6 +453,7 @@ class DialpadViewModel @Inject constructor(
         super.onCleared()
         // Release the Glyph session this VM may have driven (safe to call repeatedly).
         runCatching { glyphController.release() }
+        runCatching { toneGenerator?.release() }
     }
 
     private companion object {

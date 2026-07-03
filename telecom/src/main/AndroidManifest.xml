@@ -18,6 +18,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Call notifications (incoming full-screen intent + ongoing). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -33,6 +34,7 @@
         <service
             android:name=".service.GlyphInCallService"
             android:exported="true"
+            android:foregroundServiceType="phoneCall"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <meta-data
                 android:name="android.telecom.IN_CALL_SERVICE_UI"

@@ -1,17 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.telecom.service
 
+import android.content.Intent
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.glyph.GlyphController
+import com.glyphdialer.core.domain.model.AudioRoute
 import com.glyphdialer.core.domain.model.CallModel
 import com.glyphdialer.core.domain.model.CallState
 import com.glyphdialer.telecom.CallRegistry
 import com.glyphdialer.telecom.Constants
 import com.glyphdialer.telecom.notification.CallNotificationManager
 import dagger.hilt.android.AndroidEntryPoint
+import android.os.Build
+import android.content.pm.ServiceInfo
+import androidx.core.app.ServiceCompat
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -33,6 +38,8 @@ class GlyphInCallService : InCallService() {
 
     @Inject lateinit var glyphController: GlyphController
 
+    private var isServiceForeground = false
+
     @Inject lateinit var notifications: CallNotificationManager
 
     /** One callback per Call so we can re-derive the registry on every transition. */
@@ -44,12 +51,53 @@ class GlyphInCallService : InCallService() {
         Timber.tag(Constants.TAG).i("GlyphInCallService created")
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+            val action = intent.action
+            val callId = intent.getStringExtra(EXTRA_CALL_ID)
+            Timber.tag(Constants.TAG).i("GlyphInCallService onStartCommand: action=%s, callId=%s", action, callId)
+            if (callId != null) {
+                when (action) {
+                    ACTION_ANSWER -> {
+                        val answered = CallRegistry.answer(callId)
+                        Timber.tag(Constants.TAG).i("Answer call result: %b", answered)
+                    }
+                    ACTION_DECLINE -> {
+                        val rejected = CallRegistry.reject(callId, null)
+                        Timber.tag(Constants.TAG).i("Reject call result: %b", rejected)
+                    }
+                    ACTION_DISCONNECT -> {
+                        val disconnected = CallRegistry.disconnect(callId)
+                        Timber.tag(Constants.TAG).i("Disconnect call result: %b", disconnected)
+                    }
+                    ACTION_TOGGLE_MUTE -> {
+                        toggleMute()
+                    }
+                    ACTION_TOGGLE_SPEAKER -> {
+                        toggleSpeaker()
+                    }
+                }
+            }
+        }
+        return START_NOT_STICKY
+    }
+
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         val id = CallRegistry.registerCall(call)
         val callback = object : Call.Callback() {
             override fun onStateChanged(c: Call, state: Int) {
+                val wasConnecting = CallRegistry.snapshot().find { it.id == id }?.state
                 CallRegistry.onCallChanged()
+                val isConnecting = CallRegistry.snapshot().find { it.id == id }?.state
+                
+                // If it transitioned to an active/dialing state, ensure UI is shown.
+                val becameActive = wasConnecting != CallState.ACTIVE && isConnecting == CallState.ACTIVE
+                val becameDialing = wasConnecting != isConnecting && (isConnecting == CallState.DIALING || isConnecting == CallState.CONNECTING)
+                
+                if (becameActive || becameDialing) {
+                    notifications.bringInCallToForeground(showDialpad = false)
+                }
                 refresh()
             }
 
@@ -81,6 +129,14 @@ class GlyphInCallService : InCallService() {
         callbacks[call] = callback
         call.registerCallback(callback)
         Timber.tag(Constants.TAG).d("onCallAdded id=%s", id)
+        
+        // Automatically show the InCall UI for outgoing calls (BUILD_SPEC §7.2)
+        // Check state on added, or later in onStateChanged.
+        val callModel = CallRegistry.snapshot().find { it.id == id }
+        if (callModel != null && !callModel.isIncomingRinging) {
+            notifications.bringInCallToForeground(showDialpad = false)
+        }
+        
         refresh()
     }
 
@@ -94,6 +150,7 @@ class GlyphInCallService : InCallService() {
     override fun onCallAudioStateChanged(audioState: CallAudioState) {
         super.onCallAudioStateChanged(audioState)
         CallRegistry.onAudioStateChanged(audioState)
+        refresh()
     }
 
     override fun onBringToForeground(showDialpad: Boolean) {
@@ -115,8 +172,38 @@ class GlyphInCallService : InCallService() {
     private fun refresh() {
         val calls = CallRegistry.snapshot()
         val primary = pickPrimary(calls)
+        updateForegroundState(primary)
         notifications.update(calls, primary)
         driveGlyph(primary)
+    }
+
+    private fun updateForegroundState(primary: CallModel?) {
+        if (primary == null || primary.state.isTerminal || primary.isIncomingRinging) {
+            if (isServiceForeground) {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                isServiceForeground = false
+                Timber.tag(Constants.TAG).i("GlyphInCallService: stopped foreground")
+            }
+        } else {
+            val notification = notifications.buildOngoing(primary)
+            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+            } else {
+                0
+            }
+            try {
+                ServiceCompat.startForeground(
+                    this,
+                    com.glyphdialer.core.common.Constants.NotificationIds.ONGOING_CALL,
+                    notification,
+                    type
+                )
+                isServiceForeground = true
+                Timber.tag(Constants.TAG).i("GlyphInCallService: started foreground with notification")
+            } catch (t: Throwable) {
+                Timber.tag(Constants.TAG).e(t, "GlyphInCallService startForeground failed")
+            }
+        }
     }
 
     private fun pickPrimary(calls: List<CallModel>): CallModel? =
@@ -124,6 +211,30 @@ class GlyphInCallService : InCallService() {
             ?: calls.firstOrNull { it.state == CallState.ACTIVE || it.state == CallState.CONFERENCE }
             ?: calls.firstOrNull { it.state == CallState.DIALING || it.state == CallState.CONNECTING }
             ?: calls.firstOrNull { !it.state.isTerminal }
+
+    private fun toggleMute() {
+        val currentMuted = CallRegistry.audioState.value.isMuted
+        CallRegistry.setMuted(!currentMuted)
+        refresh()
+    }
+
+    private fun toggleSpeaker() {
+        val currentRoute = CallRegistry.audioState.value.route
+        val targetRoute = if (currentRoute == AudioRoute.SPEAKER) {
+            val supported = CallRegistry.audioState.value.supportedRoutes
+            if (AudioRoute.EARPIECE in supported) {
+                AudioRoute.EARPIECE
+            } else if (AudioRoute.WIRED_HEADSET in supported) {
+                AudioRoute.WIRED_HEADSET
+            } else {
+                AudioRoute.EARPIECE
+            }
+        } else {
+            AudioRoute.SPEAKER
+        }
+        CallRegistry.setAudioRoute(targetRoute)
+        refresh()
+    }
 
     private fun driveGlyph(primary: CallModel?) {
         // GlyphController no-ops when unavailable (§9); calling unconditionally is safe.
@@ -138,5 +249,14 @@ class GlyphInCallService : InCallService() {
         if (primary?.isIncomingRinging == true) {
             runCatching { glyphController.playIncomingShow(primary.number.dialValue.hashCode()) }
         }
+    }
+
+    companion object {
+        const val ACTION_ANSWER = "com.glyphdialer.telecom.action.ANSWER"
+        const val ACTION_DECLINE = "com.glyphdialer.telecom.action.DECLINE"
+        const val ACTION_DISCONNECT = "com.glyphdialer.telecom.action.DISCONNECT"
+        const val ACTION_TOGGLE_MUTE = "com.glyphdialer.telecom.action.TOGGLE_MUTE"
+        const val ACTION_TOGGLE_SPEAKER = "com.glyphdialer.telecom.action.TOGGLE_SPEAKER"
+        const val EXTRA_CALL_ID = "com.glyphdialer.telecom.extra.CALL_ID"
     }
 }

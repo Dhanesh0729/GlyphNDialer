@@ -26,6 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,11 +79,13 @@ import com.glyphdialer.feature.dialpad.glyph.KeyStrokeMirror
  *   contact picker for the given slot; the result is fed back via
  *   [DialpadViewModel.assignSpeedDial]).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialpadRouteScreen(
     modifier: Modifier = Modifier,
     onNavigateToAddContact: (number: String) -> Unit = {},
     onAssignSpeedDial: (slot: Int) -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: DialpadViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -99,6 +105,9 @@ fun DialpadRouteScreen(
 
     Scaffold(
         modifier = modifier,
+        topBar = {
+            DialpadTopBar(onNavigateToSettings = onNavigateToSettings)
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
@@ -111,6 +120,36 @@ fun DialpadRouteScreen(
                 .padding(innerPadding),
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DialpadTopBar(
+    onNavigateToSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = "GLYPH DIALER",
+                style = MaterialTheme.typography.titleMedium.merge(NumberStyle),
+            )
+        },
+        actions = {
+            IconButton(onClick = onNavigateToSettings) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings",
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+        ),
+        modifier = modifier,
+    )
 }
 
 /**

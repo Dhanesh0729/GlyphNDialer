@@ -43,6 +43,7 @@ dependencies {
     // Theme tokens + shared utilities (CONVENTIONS.md §3 dependency graph).
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
+    implementation(project(":core:domain"))
 
     // Jetpack Compose (BOM-pinned) + Material 3 — the rendering surface.
     implementation(platform(libs.androidx.compose.bom))

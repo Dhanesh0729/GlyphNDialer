@@ -148,12 +148,22 @@ class CallLogViewModel @Inject constructor(
                 }
             }
         }
-        val types = if (filter == CallLogFilter.MISSED) MISSED_TYPES else null
+        val types = when (filter) {
+            CallLogFilter.MISSED -> MISSED_TYPES
+            CallLogFilter.INCOMING -> setOf(CallType.INCOMING)
+            CallLogFilter.OUTGOING -> setOf(CallType.OUTGOING)
+            CallLogFilter.ALL -> null
+        }
         return getCallLog(types = types)
     }
 
     private fun applyFilter(entries: List<CallLogEntry>, filter: CallLogFilter): List<CallLogEntry> =
-        if (filter == CallLogFilter.MISSED) entries.filter { it.type.isMissedLike } else entries
+        when (filter) {
+            CallLogFilter.MISSED -> entries.filter { it.type.isMissedLike }
+            CallLogFilter.INCOMING -> entries.filter { it.type == CallType.INCOMING }
+            CallLogFilter.OUTGOING -> entries.filter { it.type == CallType.OUTGOING }
+            CallLogFilter.ALL -> entries
+        }
 
     private fun observeMissedBadge() {
         viewModelScope.launch {

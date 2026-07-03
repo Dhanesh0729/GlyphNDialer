@@ -5,6 +5,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import com.glyphdialer.feature.incall.InCallScreen
 
 /**
@@ -29,7 +30,15 @@ fun NavGraphBuilder.inCallGraph(
     onNavigateToDialpad: () -> Unit,
     onCallEnded: () -> Unit,
 ) {
-    composable(route = InCallRoute) {
+    composable(
+        route = InCallRoute,
+        deepLinks = listOf(
+            navDeepLink {
+                action = "com.glyphdialer.action.IN_CALL"
+                uriPattern = "glyphdialer://incall"
+            }
+        )
+    ) {
         InCallScreen(
             onNavigateToDialpad = onNavigateToDialpad,
             onCallEnded = onCallEnded,

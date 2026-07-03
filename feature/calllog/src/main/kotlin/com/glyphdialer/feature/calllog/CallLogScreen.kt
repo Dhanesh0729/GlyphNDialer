@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -266,6 +269,7 @@ private fun FilterRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = Dimens.screenPadding, vertical = Dimens.spaceSm),
         horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
         verticalAlignment = Alignment.CenterVertically,
@@ -282,6 +286,16 @@ private fun FilterRow(
                 Text(if (missedBadge > 0) "Missed ($missedBadge)" else "Missed")
             },
         )
+        FilterChip(
+            selected = filter == CallLogFilter.INCOMING,
+            onClick = { onFilter(CallLogFilter.INCOMING) },
+            label = { Text("Incoming") },
+        )
+        FilterChip(
+            selected = filter == CallLogFilter.OUTGOING,
+            onClick = { onFilter(CallLogFilter.OUTGOING) },
+            label = { Text("Outgoing") },
+        )
     }
 }
 
@@ -297,6 +311,8 @@ private fun EmptyCallLog(filter: CallLogFilter, searching: Boolean) {
     val (title, message) = when {
         searching -> "No matches" to "No calls match your search."
         filter == CallLogFilter.MISSED -> "No missed calls" to "Calls you miss will show up here."
+        filter == CallLogFilter.INCOMING -> "No incoming calls" to "Calls you receive will show up here."
+        filter == CallLogFilter.OUTGOING -> "No outgoing calls" to "Calls you make will show up here."
         else -> "No recents" to "Calls you make and receive will show up here."
     }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -117,6 +117,9 @@ fun GlyphApp(
                     // we just surface the contacts list as the picker.
                     navController.navigate(ContactsRoutes.LIST)
                 },
+                onNavigateToSettings = {
+                    navController.openSettings()
+                },
             )
 
             // -------------------- Recents / Call log --------------------

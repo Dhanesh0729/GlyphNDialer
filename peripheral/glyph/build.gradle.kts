@@ -55,9 +55,9 @@ dependencies {
 
     // NOTE(gdk): The Nothing GDK / Glyph Matrix AAR is NOT present at build time.
     // The controllers drive it ENTIRELY VIA REFLECTION so this module compiles
-    // without the binary and lights up at runtime when it is present. To enable the
     // real hardware path, drop the official AAR into peripheral/glyph/libs/ and add
     // `implementation(files("libs/<gdk>.aar"))` here (see TODO in README/notes).
+    implementation(files("libs/glyph-matrix-sdk-2.0.aar"))
 
     // Unit testing (JUnit5 + Truth + Turbine + coroutines-test + MockK).
     testImplementation(libs.bundles.unit.test)
