@@ -74,6 +74,8 @@ enum class RetentionWindow(val days: Int?) {
  * [com.glyphdialer.core.domain.repository.SettingsRepository].
  */
 data class UserPreferences(
+    /** Cached entitlement restored from Google Play Billing. Never user-editable. */
+    val appPlan: AppPlan = AppPlan.FREE,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val appFont: AppFont = AppFont.OG_DOT_MATRIX,
     val accentColor: AccentColor = AccentColor.DEFAULT,

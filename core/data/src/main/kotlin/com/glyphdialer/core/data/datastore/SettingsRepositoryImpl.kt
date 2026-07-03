@@ -14,6 +14,7 @@ import com.glyphdialer.core.common.dispatchers.Dispatcher
 import com.glyphdialer.core.common.dispatchers.GlyphDispatcher
 import com.glyphdialer.core.domain.model.AccentColor
 import com.glyphdialer.core.domain.model.AppFont
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.RetentionWindow
 import com.glyphdialer.core.domain.model.ThemeMode
 import com.glyphdialer.core.domain.model.TranscriptionEngineType
@@ -82,6 +83,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private fun Preferences.toUserPreferences(): UserPreferences {
         val defaults = UserPreferences()
         return UserPreferences(
+            appPlan = decodeEnum(this[Keys.APP_PLAN], defaults.appPlan),
             themeMode = decodeEnum(this[Keys.THEME_MODE], defaults.themeMode),
             appFont = decodeEnum(this[Keys.APP_FONT], defaults.appFont),
             accentColor = decodeEnum(this[Keys.ACCENT_COLOR], defaults.accentColor),
@@ -104,6 +106,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     private fun MutablePreferences.writeFrom(p: UserPreferences) {
+        this[Keys.APP_PLAN] = p.appPlan.name
         this[Keys.THEME_MODE] = p.themeMode.name
         this[Keys.APP_FONT] = p.appFont.name
         this[Keys.ACCENT_COLOR] = p.accentColor.name
@@ -137,6 +140,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     /** Keys for every persisted preference (BUILD_SPEC §19). */
     private object Keys {
+        val APP_PLAN = stringPreferencesKey("app_plan")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val APP_FONT = stringPreferencesKey("app_font")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")

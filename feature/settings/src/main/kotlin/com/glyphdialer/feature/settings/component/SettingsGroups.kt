@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import com.glyphdialer.core.designsystem.theme.Dimens
 import com.glyphdialer.core.domain.model.AccentColor
 import com.glyphdialer.core.domain.model.AppFont
+import com.glyphdialer.core.domain.model.AppPlan
+import com.glyphdialer.core.domain.model.MonetizationCatalog
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.RetentionWindow
 import com.glyphdialer.core.domain.model.ThemeMode
@@ -137,6 +139,50 @@ private fun AccentPicker(
     }
 }
 
+
+// --- Plan / billing ---------------------------------------------------------------
+
+@Composable
+fun PlanGroup(
+    state: SettingsUiState,
+    modifier: Modifier = Modifier,
+) {
+    val plan = state.preferences.appPlan
+    val basic = MonetizationCatalog.products.first { it.plan == AppPlan.BASIC }
+    val pro = MonetizationCatalog.products.first { it.plan == AppPlan.PRO }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        SettingsSectionHeader("Plan")
+
+        SettingsStatusRow(
+            title = "Current plan",
+            value = SettingsLabels.plan(plan),
+            subtitle = when (plan) {
+                AppPlan.FREE -> "Free keeps the dialer clean. Glyph customization unlocks with Basic."
+                AppPlan.BASIC -> "Glyph incoming-call effects are unlocked."
+                AppPlan.PRO -> "Full customization is unlocked."
+            },
+        )
+
+        SettingsStatusRow(
+            title = basic.displayName,
+            value = "INR ${basic.targetPriceInr} one-time",
+            subtitle = "Glyph flash, contact patterns, ringtone sync, effect library, previews",
+        )
+
+        SettingsStatusRow(
+            title = pro.displayName,
+            value = "INR ${pro.targetPriceInr} one-time",
+            subtitle = "Premium themes, custom Glyph creator, presets, groups, profiles",
+        )
+
+        DisclaimerBlock(
+            text = "Play Store builds must unlock these digital features through " +
+                "Google Play Billing. Do not use external payment gateways inside the " +
+                "app for Basic or Pro unlocks.",
+        )
+    }
+}
 // --- Glyph (hidden entirely when glyphAvailable == false; §9/§17) ------------------
 
 @Composable

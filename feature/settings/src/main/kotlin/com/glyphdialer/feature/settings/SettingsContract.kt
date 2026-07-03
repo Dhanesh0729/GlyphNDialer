@@ -3,6 +3,7 @@ package com.glyphdialer.feature.settings
 
 import com.glyphdialer.core.domain.model.AccentColor
 import com.glyphdialer.core.domain.model.AppFont
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.CapabilityFlags
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.RetentionWindow
@@ -55,7 +56,7 @@ data class SettingsUiState(
     val errorMessage: String? = null,
 ) {
     /** Glyph settings are offered ONLY on capable Nothing hardware (§9/§17). */
-    val showGlyphGroup: Boolean get() = capabilities.glyphAvailable
+    val showGlyphGroup: Boolean get() = capabilities.glyphAvailable && preferences.appPlan.includes(AppPlan.BASIC)
 
     /** The best recording tier achievable on this device, surfaced read-only (§12). */
     val activeRecordingTier: RecordingTier get() = capabilities.maxRecordingTier

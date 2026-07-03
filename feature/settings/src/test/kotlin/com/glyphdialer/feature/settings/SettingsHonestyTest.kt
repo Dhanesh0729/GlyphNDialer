@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.feature.settings
 
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.CapabilityFlags
 import com.glyphdialer.core.domain.model.RecordingTier
+import com.glyphdialer.core.domain.model.UserPreferences
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
 
@@ -20,9 +22,15 @@ class SettingsHonestyTest {
     }
 
     @Test
-    fun `glyph group shown only on capable hardware`() {
-        val state = SettingsUiState(capabilities = CapabilityFlags(glyphAvailable = true))
-        assertThat(state.showGlyphGroup).isTrue()
+    fun `glyph group requires capable hardware and Basic plan`() {
+        val free = SettingsUiState(capabilities = CapabilityFlags(glyphAvailable = true))
+        val basic = SettingsUiState(
+            preferences = UserPreferences(appPlan = AppPlan.BASIC),
+            capabilities = CapabilityFlags(glyphAvailable = true),
+        )
+
+        assertThat(free.showGlyphGroup).isFalse()
+        assertThat(basic.showGlyphGroup).isTrue()
     }
 
     @Test
@@ -44,11 +52,13 @@ class SettingsHonestyTest {
     }
 
     @Test
-    fun `system and voip tiers are honestly two-way`() {
+    fun `system voip and speaker tiers are honestly two-way`() {
         assertThat(RecordingTier.SYSTEM_TWO_WAY.isTwoWay).isTrue()
         assertThat(RecordingTier.VOIP_TWO_WAY.isTwoWay).isTrue()
+        assertThat(RecordingTier.SPEAKER_TWO_WAY.isTwoWay).isTrue()
         assertThat(SettingsLabels.tier(RecordingTier.SYSTEM_TWO_WAY).lowercase()).contains("two-way")
         assertThat(SettingsLabels.tier(RecordingTier.VOIP_TWO_WAY).lowercase()).contains("two-way")
+        assertThat(SettingsLabels.tier(RecordingTier.SPEAKER_TWO_WAY).lowercase()).contains("two-way")
     }
 
     @Test

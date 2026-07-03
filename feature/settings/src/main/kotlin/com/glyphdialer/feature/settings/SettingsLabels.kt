@@ -3,6 +3,7 @@ package com.glyphdialer.feature.settings
 
 import com.glyphdialer.core.domain.model.AccentColor
 import com.glyphdialer.core.domain.model.AppFont
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.RetentionWindow
 import com.glyphdialer.core.domain.model.ThemeMode
@@ -26,6 +27,11 @@ internal object SettingsLabels {
         AppFont.NEW_GROTESQUE -> "New"
     }
 
+    fun plan(plan: AppPlan): String = when (plan) {
+        AppPlan.FREE -> "Free"
+        AppPlan.BASIC -> "Basic"
+        AppPlan.PRO -> "Pro"
+    }
     fun accent(accent: AccentColor): String = when (accent) {
         AccentColor.GLYPH_RED -> "Red"
         AccentColor.AMBER -> "Amber"
