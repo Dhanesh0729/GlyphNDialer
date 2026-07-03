@@ -55,3 +55,9 @@ obj/
 
 # Kotlin
 .kotlin/
+
+# Local Gradle distributions and temp build jars
+gradle-*/
+classes.jar
+**/schemas/
+
