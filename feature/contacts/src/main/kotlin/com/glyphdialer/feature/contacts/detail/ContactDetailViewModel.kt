@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.feature.contacts.detail
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,9 +63,11 @@ class ContactDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val lookupKey: String =
-        checkNotNull(savedStateHandle[ContactsRoutes.ARG_LOOKUP_KEY]) {
-            "ContactDetail requires a ${ContactsRoutes.ARG_LOOKUP_KEY} argument"
-        }
+        Uri.decode(
+            checkNotNull(savedStateHandle[ContactsRoutes.ARG_LOOKUP_KEY]) {
+                "ContactDetail requires a ${ContactsRoutes.ARG_LOOKUP_KEY} argument"
+            },
+        )
 
     private val _uiState = MutableStateFlow(ContactDetailUiState())
     val uiState: StateFlow<ContactDetailUiState> = _uiState.asStateFlow()

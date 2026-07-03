@@ -40,6 +40,7 @@ import com.glyphdialer.feature.settings.component.AppearanceGroup
 import com.glyphdialer.feature.settings.component.CallsGroup
 import com.glyphdialer.feature.settings.component.ContactsGroup
 import com.glyphdialer.feature.settings.component.GlyphGroup
+import com.glyphdialer.feature.settings.component.LockedGlyphGroup
 import com.glyphdialer.feature.settings.component.PlanGroup
 import com.glyphdialer.feature.settings.component.RecordingGroup
 import com.glyphdialer.feature.settings.component.TranscriptionGroup
@@ -161,8 +162,9 @@ fun SettingsScreen(
                     item(key = "plan") { PlanGroup(uiState) }
 
                     // §9/§17: Glyph group is hidden entirely on non-capable devices.
-                    if (uiState.showGlyphGroup) {
-                        item(key = "glyph") { GlyphGroup(uiState, onEvent) }
+                    when {
+                        uiState.showGlyphGroup -> item(key = "glyph") { GlyphGroup(uiState, onEvent) }
+                        uiState.showLockedGlyphGroup -> item(key = "glyph_locked") { LockedGlyphGroup() }
                     }
 
                     item(key = "calls") { CallsGroup(uiState, onEvent) }

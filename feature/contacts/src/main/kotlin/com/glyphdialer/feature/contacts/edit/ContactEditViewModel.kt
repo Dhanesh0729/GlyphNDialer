@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.feature.contacts.edit
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -49,7 +50,8 @@ class ContactEditViewModel @Inject constructor(
     @Suppress("unused") @Dispatcher(GlyphDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
-    private val editingLookupKey: String? = savedStateHandle[ContactsRoutes.ARG_LOOKUP_KEY]
+    private val editingLookupKey: String? =
+        savedStateHandle.get<String>(ContactsRoutes.ARG_LOOKUP_KEY)?.let(Uri::decode)
 
     private val _uiState = MutableStateFlow(ContactEditUiState(isEditing = editingLookupKey != null))
     val uiState: StateFlow<ContactEditUiState> = _uiState.asStateFlow()

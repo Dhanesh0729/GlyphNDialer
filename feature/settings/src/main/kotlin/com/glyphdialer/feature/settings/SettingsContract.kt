@@ -58,6 +58,9 @@ data class SettingsUiState(
     /** Glyph settings are offered ONLY on capable Nothing hardware (§9/§17). */
     val showGlyphGroup: Boolean get() = capabilities.glyphAvailable && preferences.appPlan.includes(AppPlan.BASIC)
 
+    /** Show a read-only Basic/Pro upsell on Glyph hardware when Free is active. */
+    val showLockedGlyphGroup: Boolean get() = capabilities.glyphAvailable && !showGlyphGroup
+
     /** The best recording tier achievable on this device, surfaced read-only (§12). */
     val activeRecordingTier: RecordingTier get() = capabilities.maxRecordingTier
 

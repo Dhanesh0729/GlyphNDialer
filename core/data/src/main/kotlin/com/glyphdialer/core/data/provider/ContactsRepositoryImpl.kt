@@ -140,10 +140,67 @@ class ContactsRepositoryImpl @Inject constructor(
         }
 
     override suspend fun updateContact(contact: Contact): AppResult<Unit> =
-        AppResult.Failure(
-            UnsupportedOperationException("Bulk contact field editing is not implemented in this pass"),
-            "Editing contact fields is not yet supported.",
-        )
+        appResultOfSuspend {
+            withContext(ioDispatcher) {
+                val identity = queryContactIdentity(contact.lookupKey)
+                    ?: error("Could not resolve contact for update")
+                val rawContactId = identity.rawContactIds.firstOrNull()
+                    ?: error("Contact has no writable raw contact")
+
+                val ops = ArrayList<android.content.ContentProviderOperation>()
+                val rawIds = identity.rawContactIds.map { it.toString() }
+                val rawSelection = inSelection(ContactsContract.Data.RAW_CONTACT_ID, rawIds.size)
+
+                ops.add(
+                    android.content.ContentProviderOperation
+                        .newDelete(ContactsContract.Data.CONTENT_URI)
+                        .withSelection(
+                            "$rawSelection AND ${ContactsContract.Data.MIMETYPE} IN (?, ?)",
+                            (rawIds + listOf(
+                                ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                            )).toTypedArray(),
+                        )
+                        .build(),
+                )
+
+                ops.add(
+                    android.content.ContentProviderOperation
+                        .newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                        )
+                        .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
+                            contact.displayName.trim(),
+                        )
+                        .build(),
+                )
+
+                contact.numbers.forEachIndexed { index, number ->
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                            )
+                            .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, number.dialValue)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, number.label.toProviderType())
+                            .withValue(ContactsContract.CommonDataKinds.Phone.LABEL, number.customLabel)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, if (index == 0 || number.isPrimary) 1 else 0)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY, if (index == 0 || number.isPrimary) 1 else 0)
+                            .build(),
+                    )
+                }
+
+                resolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                Unit
+            }
+        }
 
     override suspend fun deleteContact(lookupKey: String): AppResult<Unit> =
         appResultOfSuspend {
@@ -157,10 +214,41 @@ class ContactsRepositoryImpl @Inject constructor(
         }
 
     override suspend fun setDefaultNumber(lookupKey: String, number: String): AppResult<Unit> =
-        AppResult.Failure(
-            UnsupportedOperationException("Setting the OS-level super-primary number is not implemented in this pass"),
-            "Changing a contact's default number is not yet supported.",
-        )
+        appResultOfSuspend {
+            withContext(ioDispatcher) {
+                val phones = queryPhoneDataRows(lookupKey)
+                val target = phones.firstOrNull { it.matches(number) }
+                    ?: error("Could not find that number on this contact")
+
+                val ops = ArrayList<android.content.ContentProviderOperation>()
+                if (phones.isNotEmpty()) {
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newUpdate(ContactsContract.Data.CONTENT_URI)
+                            .withSelection(
+                                inSelection(ContactsContract.Data._ID, phones.size),
+                                phones.map { it.dataId.toString() }.toTypedArray(),
+                            )
+                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, 0)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY, 0)
+                            .build(),
+                    )
+                }
+                ops.add(
+                    android.content.ContentProviderOperation
+                        .newUpdate(ContactsContract.Data.CONTENT_URI)
+                        .withSelection(
+                            "${ContactsContract.Data._ID} = ?",
+                            arrayOf(target.dataId.toString()),
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, 1)
+                        .withValue(ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY, 1)
+                        .build(),
+                )
+                resolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                Unit
+            }
+        }
 
     // --- internal queries ---------------------------------------------------
 
@@ -321,6 +409,84 @@ class ContactsRepositoryImpl @Inject constructor(
         return null
     }
 
+    private fun queryContactIdentity(lookupKey: String): ContactIdentity? {
+        val contactId = resolver.query(
+            ContactsContract.Contacts.CONTENT_LOOKUP_URI.buildUpon().appendPath(lookupKey).build(),
+            arrayOf(ContactsContract.Contacts._ID),
+            null, null, null,
+        )?.use { c -> if (c.moveToFirst()) c.getLong(0) else null } ?: return null
+
+        val rawIds = mutableListOf<Long>()
+        resolver.query(
+            ContactsContract.RawContacts.CONTENT_URI,
+            arrayOf(ContactsContract.RawContacts._ID),
+            "${ContactsContract.RawContacts.CONTACT_ID} = ? AND ${ContactsContract.RawContacts.DELETED} = 0",
+            arrayOf(contactId.toString()),
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) rawIds += c.getLong(0)
+        }
+        return ContactIdentity(contactId = contactId, rawContactIds = rawIds)
+    }
+
+    private fun queryPhoneDataRows(lookupKey: String): List<PhoneDataRow> {
+        val identity = queryContactIdentity(lookupKey) ?: return emptyList()
+        if (identity.rawContactIds.isEmpty()) return emptyList()
+        val rawIds = identity.rawContactIds.map { it.toString() }
+        val rows = mutableListOf<PhoneDataRow>()
+        resolver.query(
+            ContactsContract.Data.CONTENT_URI,
+            arrayOf(
+                ContactsContract.Data._ID,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+            ),
+            "${inSelection(ContactsContract.Data.RAW_CONTACT_ID, rawIds.size)} AND ${ContactsContract.Data.MIMETYPE} = ?",
+            (rawIds + ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE).toTypedArray(),
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                rows += PhoneDataRow(
+                    dataId = c.getLong(0),
+                    number = c.getString(1).orEmpty(),
+                )
+            }
+        }
+        return rows
+    }
+
+    private fun inSelection(column: String, size: Int): String =
+        "$column IN (${List(size) { "?" }.joinToString()})"
+
+    private data class ContactIdentity(
+        val contactId: Long,
+        val rawContactIds: List<Long>,
+    )
+
+    private data class PhoneDataRow(
+        val dataId: Long,
+        val number: String,
+    ) {
+        fun matches(target: String): Boolean {
+            val mine = number.digitsOnly()
+            val theirs = target.digitsOnly()
+            return mine.isNotBlank() && theirs.isNotBlank() &&
+                (mine == theirs || mine.endsWith(theirs) || theirs.endsWith(mine))
+        }
+    }
+
+    private fun String.digitsOnly(): String = filter(Char::isDigit)
+
+    private fun NumberLabel.toProviderType(): Int = when (this) {
+        NumberLabel.MOBILE -> ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+        NumberLabel.HOME -> ContactsContract.CommonDataKinds.Phone.TYPE_HOME
+        NumberLabel.WORK -> ContactsContract.CommonDataKinds.Phone.TYPE_WORK
+        NumberLabel.MAIN -> ContactsContract.CommonDataKinds.Phone.TYPE_MAIN
+        NumberLabel.FAX_WORK -> ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK
+        NumberLabel.FAX_HOME -> ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME
+        NumberLabel.PAGER -> ContactsContract.CommonDataKinds.Phone.TYPE_PAGER
+        NumberLabel.CUSTOM -> ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM
+        NumberLabel.OTHER -> ContactsContract.CommonDataKinds.Phone.TYPE_OTHER
+    }
     private fun mapPhoneType(type: Int): NumberLabel = when (type) {
         ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> NumberLabel.MOBILE
         ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> NumberLabel.HOME

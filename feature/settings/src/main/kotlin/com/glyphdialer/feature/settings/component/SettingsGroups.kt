@@ -183,6 +183,25 @@ fun PlanGroup(
         )
     }
 }
+@Composable
+fun LockedGlyphGroup(
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        SettingsSectionHeader("Glyph")
+        SettingsStatusRow(
+            title = "Glyph effects",
+            value = "Basic",
+            subtitle = "Unlock Basic to use incoming-call flash, per-contact patterns, ringtone sync, and effect previews.",
+            accent = MaterialTheme.colorScheme.primary,
+        )
+        SettingsStatusRow(
+            title = "Pro customization",
+            value = "Pro",
+            subtitle = "Custom pattern creator, preset sharing, contact groups, profiles, and charging effects stay locked until Pro.",
+        )
+    }
+}
 // --- Glyph (hidden entirely when glyphAvailable == false; §9/§17) ------------------
 
 @Composable

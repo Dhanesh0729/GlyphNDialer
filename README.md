@@ -272,6 +272,7 @@ scaffold — tick items as the corresponding module reaches its definition of do
 | [FONTS.md](FONTS.md) | Which fonts to drop in and how fallback works |
 | [GLYPH_SETUP.md](GLYPH_SETUP.md) | Nothing dev key, meta-data, debug toggle, supported devices |
 | [MONETIZATION.md](MONETIZATION.md) | Free/Basic/Pro plan model, Play Billing product IDs, payment guidance |
+| [BUGS_SUMMARY.md](BUGS_SUMMARY.md) | Fixed bugs, known limitations, and Play Store readiness checklist |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [ROADMAP.md](ROADMAP.md) | Phased delivery plan |
 | [CONVENTIONS.md](CONVENTIONS.md) | The binding engineering contract |

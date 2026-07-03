@@ -8,6 +8,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.glyphdialer.core.common.Constants
@@ -41,6 +44,7 @@ class CallNotificationManager @Inject constructor(
     private val manager = NotificationManagerCompat.from(context)
 
     @Volatile private var channelsReady = false
+    @Volatile private var lastIncomingVibratedCallId: String? = null
 
     /** Update both notification surfaces from the current call set. */
     fun update(calls: List<CallModel>, primary: CallModel?) {
@@ -62,6 +66,7 @@ class CallNotificationManager @Inject constructor(
     }
 
     fun clearAll() {
+        lastIncomingVibratedCallId = null
         manager.cancel(Constants.NotificationIds.INCOMING_CALL)
         manager.cancel(Constants.NotificationIds.ONGOING_CALL)
     }
@@ -79,7 +84,12 @@ class CallNotificationManager @Inject constructor(
             .build()
         val builder = NotificationCompat.Builder(context, Constants.NotificationChannels.INCOMING_CALL)
             .setSmallIcon(android.R.drawable.sym_call_incoming)
+            .setContentTitle(title)
             .setContentText(call.spamLabel?.let { "Suspected: $it" } ?: "Incoming call")
+            .setSubText("Glyph Dialer")
+            .setTicker("Incoming call from $title")
+            .setColor(0xFFD7263D.toInt())
+            .setVibrate(INCOMING_VIBRATION_PATTERN)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
@@ -93,6 +103,7 @@ class CallNotificationManager @Inject constructor(
                     actionPendingIntent(GlyphInCallService.ACTION_ANSWER, call.id)
                 )
             )
+        vibrateIncoming(call.id)
         runCatching { manager.notify(Constants.NotificationIds.INCOMING_CALL, builder.build()) }
         manager.cancel(Constants.NotificationIds.ONGOING_CALL)
     }
@@ -263,6 +274,8 @@ class CallNotificationManager @Inject constructor(
                         description = "Ringing / full-screen incoming call alerts"
                         setBypassDnd(true)
                         lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                        enableVibration(true)
+                        vibrationPattern = INCOMING_VIBRATION_PATTERN
                     },
                 )
                 sys.createNotificationChannel(
@@ -280,6 +293,27 @@ class CallNotificationManager @Inject constructor(
         }
     }
 
+    private fun vibrateIncoming(callId: String) {
+        if (lastIncomingVibratedCallId == callId) return
+        lastIncomingVibratedCallId = callId
+        val vibrator = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                context.getSystemService(VibratorManager::class.java)?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+        }.getOrNull() ?: return
+        if (!vibrator.hasVibrator()) return
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(INCOMING_VIBRATION_PATTERN, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(INCOMING_VIBRATION_PATTERN, -1)
+            }
+        }.onFailure { Timber.tag(TelecomConstants.TAG).w(it, "Incoming-call vibration failed") }
+    }
     private fun canPost(): Boolean {
         val granted = manager.areNotificationsEnabled()
         if (!granted) Timber.tag(TelecomConstants.TAG).w("Notifications disabled; cannot post call notification")
@@ -295,6 +329,8 @@ class CallNotificationManager @Inject constructor(
 
         const val EXTRA_SHOW_DIALPAD: String = "com.glyphdialer.extra.SHOW_DIALPAD"
         const val EXTRA_INCOMING: String = "com.glyphdialer.extra.INCOMING"
+
+        private val INCOMING_VIBRATION_PATTERN = longArrayOf(0, 90, 70, 90, 180, 220)
 
         private const val REQ_CONTENT = 0x0C01
         private const val REQ_FULLSCREEN = 0x0C02
