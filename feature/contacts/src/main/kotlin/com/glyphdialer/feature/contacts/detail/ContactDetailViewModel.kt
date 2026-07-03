@@ -11,6 +11,7 @@ import com.glyphdialer.core.common.onFailure
 import com.glyphdialer.core.common.onSuccess
 import com.glyphdialer.core.domain.model.SpeedDialSlot
 import com.glyphdialer.core.domain.repository.CallLogRepository
+import com.glyphdialer.core.domain.repository.CapabilityRepository
 import com.glyphdialer.core.domain.repository.ContactsRepository
 import com.glyphdialer.core.domain.repository.FavoritesRepository
 import com.glyphdialer.core.domain.repository.SpeedDialRepository
@@ -57,6 +58,7 @@ class ContactDetailViewModel @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
     private val speedDialRepository: SpeedDialRepository,
     private val callLogRepository: CallLogRepository,
+    private val capabilityRepository: CapabilityRepository,
     private val toggleFavorite: ToggleFavoriteUseCase,
     @Dispatcher(GlyphDispatcher.DEFAULT) private val defaultDispatcher: CoroutineDispatcher,
     @Dispatcher(GlyphDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
@@ -79,11 +81,13 @@ class ContactDetailViewModel @Inject constructor(
         observeContact()
         observeRecentInteractions()
         observeSpeedDial()
+        observeVideoAvailability()
     }
 
     fun onEvent(event: ContactDetailEvent) {
         when (event) {
             is ContactDetailEvent.CallNumber -> emit(ContactDetailEffect.PlaceCall(event.number))
+            is ContactDetailEvent.VideoCallNumber -> emit(ContactDetailEffect.PlaceVideoCall(event.number))
             is ContactDetailEvent.MessageNumber -> emit(ContactDetailEffect.ComposeMessage(event.number))
             ContactDetailEvent.ToggleFavorite -> onToggleFavorite()
             is ContactDetailEvent.SetDefaultNumber -> onSetDefaultNumber(event.number)
@@ -162,6 +166,21 @@ class ContactDetailViewModel @Inject constructor(
                 Timber.w(t, "Failed observing speed-dial slots")
             }
             .onEach { slots -> applySpeedDial(slots) }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeVideoAvailability() {
+        capabilityRepository.capabilities
+            .flowOn(ioDispatcher)
+            .catch { t ->
+                if (t is kotlinx.coroutines.CancellationException) throw t
+                Timber.w(t, "Failed observing contact video availability")
+            }
+            .onEach { caps ->
+                _uiState.update {
+                    it.copy(videoCallAvailable = caps.voipAvailable && caps.cameraAvailable)
+                }
+            }
             .launchIn(viewModelScope)
     }
 

@@ -23,4 +23,7 @@ internal object Constants {
 
     /** Extra flag marking an outgoing request as the self-managed VoIP path. */
     const val EXTRA_IS_VOIP: String = "com.glyphdialer.telecom.EXTRA_IS_VOIP"
+
+    /** Extra flag requesting a VoIP call to negotiate video from the first offer. */
+    const val EXTRA_START_WITH_VIDEO: String = "com.glyphdialer.telecom.EXTRA_START_WITH_VIDEO"
 }

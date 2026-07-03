@@ -23,7 +23,7 @@ import com.glyphdialer.feature.contacts.list.ContactsRoute
  * via :telecom, composing SMS) are forwarded UP to the host through the [onDial] /
  * [onMessage] callbacks, keeping the module within its permitted dependency set (§3).
  *
- * The contact lookup key is passed as a path argument. It is URL-encoded on the way in
+ * The contact lookup key is passed as a query argument. It is URL-encoded on the way in
  * and decoded by the destination's ViewModel (ContactsContract lookup keys can contain
  * URL-reserved characters such as '/').
  */
@@ -38,7 +38,7 @@ object ContactsRoutes {
     private const val EDIT_BASE = "contacts/edit"
 
     /** Route pattern for the contact-detail destination. */
-    const val DETAIL: String = "$DETAIL_BASE/{$ARG_LOOKUP_KEY}"
+    const val DETAIL: String = "$DETAIL_BASE?$ARG_LOOKUP_KEY={$ARG_LOOKUP_KEY}"
 
     /**
      * Route pattern for the create/edit destination. The optional [ARG_LOOKUP_KEY]
@@ -47,7 +47,7 @@ object ContactsRoutes {
     const val EDIT: String = "$EDIT_BASE?$ARG_LOOKUP_KEY={$ARG_LOOKUP_KEY}"
 
     /** Build a concrete detail route for [lookupKey]. */
-    fun detailOf(lookupKey: String): String = "$DETAIL_BASE/${Uri.encode(lookupKey)}"
+    fun detailOf(lookupKey: String): String = "$DETAIL_BASE?$ARG_LOOKUP_KEY=${Uri.encode(lookupKey)}"
 
     /** Build a concrete edit route; pass null to create a new contact. */
     fun editOf(lookupKey: String? = null): String =
@@ -76,12 +76,14 @@ fun NavController.navigateToContactEdit(lookupKey: String? = null, navOptions: N
  * @param navController the host controller, used for intra-feature navigation
  *   (list → detail → edit) so :app doesn't have to thread every hop.
  * @param onDial host-provided dialer (TelecomManager / ACTION_CALL).
+ * @param onVideoDial host-provided in-app WebRTC video caller.
  * @param onMessage host-provided SMS composer.
  * @param onNavigateUp pop the current destination.
  */
 fun NavGraphBuilder.contactsGraph(
     navController: NavController,
     onDial: (String) -> Unit,
+    onVideoDial: (String) -> Unit,
     onMessage: (String) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
@@ -96,13 +98,17 @@ fun NavGraphBuilder.contactsGraph(
     composable(
         route = ContactsRoutes.DETAIL,
         arguments = listOf(
-            navArgument(ContactsRoutes.ARG_LOOKUP_KEY) { type = NavType.StringType },
+            navArgument(ContactsRoutes.ARG_LOOKUP_KEY) {
+                type = NavType.StringType
+                nullable = false
+            },
         ),
     ) {
         ContactDetailRoute(
             onNavigateUp = onNavigateUp,
             onEdit = { lookupKey -> navController.navigateToContactEdit(lookupKey) },
             onDial = onDial,
+            onVideoDial = onVideoDial,
             onMessage = onMessage,
         )
     }

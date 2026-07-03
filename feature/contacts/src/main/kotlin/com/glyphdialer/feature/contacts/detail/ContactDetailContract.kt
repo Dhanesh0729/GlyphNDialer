@@ -30,6 +30,7 @@ data class ContactDetailUiState(
     val isFavorite: Boolean = false,
     val defaultNumber: String? = null,
     val recentInteractions: List<RecentInteraction> = emptyList(),
+    val videoCallAvailable: Boolean = false,
     val assignedSpeedDialSlots: Map<Int, String> = emptyMap(),
     val speedDialSheet: SpeedDialSheetTarget? = null,
     val occupiedSlots: Set<Int> = emptySet(),
@@ -90,6 +91,9 @@ sealed interface ContactDetailEvent {
     /** Tap a number to call it. */
     data class CallNumber(val number: String) : ContactDetailEvent
 
+    /** Tap the video affordance for an in-app WebRTC call. */
+    data class VideoCallNumber(val number: String) : ContactDetailEvent
+
     /** Tap the message affordance for a number. */
     data class MessageNumber(val number: String) : ContactDetailEvent
 
@@ -125,6 +129,9 @@ sealed interface ContactDetailEvent {
 sealed interface ContactDetailEffect {
     /** Place a call to [number] (delegated up to :app). */
     data class PlaceCall(val number: String) : ContactDetailEffect
+
+    /** Place an in-app WebRTC video call to [number] (delegated up to :app). */
+    data class PlaceVideoCall(val number: String) : ContactDetailEffect
 
     /** Open the SMS composer for [number]. */
     data class ComposeMessage(val number: String) : ContactDetailEffect

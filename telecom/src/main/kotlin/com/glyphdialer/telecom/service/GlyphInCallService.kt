@@ -12,6 +12,7 @@ import com.glyphdialer.core.domain.model.CallModel
 import com.glyphdialer.core.domain.model.CallState
 import com.glyphdialer.telecom.CallRegistry
 import com.glyphdialer.telecom.Constants
+import com.glyphdialer.telecom.gesture.BackTapCallController
 import com.glyphdialer.telecom.notification.CallNotificationManager
 import dagger.hilt.android.AndroidEntryPoint
 import android.os.Build
@@ -41,9 +42,11 @@ class GlyphInCallService : InCallService() {
     private var isServiceForeground = false
 
     @Inject lateinit var notifications: CallNotificationManager
+    @Inject lateinit var backTapCallController: BackTapCallController
 
     /** One callback per Call so we can re-derive the registry on every transition. */
     private val callbacks = HashMap<Call, Call.Callback>()
+    private var lastLiveCallIds: Set<String> = emptySet()
 
     override fun onCreate() {
         super.onCreate()
@@ -162,6 +165,7 @@ class GlyphInCallService : InCallService() {
         callbacks.forEach { (call, cb) -> runCatching { call.unregisterCallback(cb) } }
         callbacks.clear()
         CallRegistry.detachService()
+        backTapCallController.release()
         notifications.clearAll()
         runCatching { glyphController.showOnCall(CallVisual.ENDED) }
         Timber.tag(Constants.TAG).i("GlyphInCallService destroyed")
@@ -172,9 +176,18 @@ class GlyphInCallService : InCallService() {
     private fun refresh() {
         val calls = CallRegistry.snapshot()
         val primary = pickPrimary(calls)
+        updateCallEndedFeedback(calls)
+        backTapCallController.update(primary)
         updateForegroundState(primary)
         notifications.update(calls, primary)
         driveGlyph(primary)
+    }
+
+    private fun updateCallEndedFeedback(calls: List<CallModel>) {
+        val liveIds = calls.filterNot { it.state.isTerminal }.map { it.id }.toSet()
+        val ended = lastLiveCallIds - liveIds
+        if (ended.isNotEmpty()) notifications.vibrateCallEnded()
+        lastLiveCallIds = liveIds
     }
 
     private fun updateForegroundState(primary: CallModel?) {

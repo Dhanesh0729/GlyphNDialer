@@ -282,6 +282,53 @@ fun CallsGroup(
             onCheckedChange = { onEvent(SettingsEvent.SetCallerIdSpam(it)) },
         )
 
+        SettingsStatusRow(
+            title = "Video calls",
+            value = when {
+                !state.capabilities.cameraAvailable -> "No camera"
+                state.capabilities.voipAvailable -> "Ready"
+                else -> "Setup"
+            },
+            subtitle = when {
+                !state.capabilities.cameraAvailable -> "This device has no camera for app-to-app video."
+                state.capabilities.voipAvailable -> "In-app WebRTC video calls are enabled."
+                else -> "Configure a WebRTC signaling backend to enable app-to-app video."
+            },
+            accent = if (state.capabilities.voipAvailable && state.capabilities.cameraAvailable) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+
+        SettingsSwitchRow(
+            title = "Incoming vibration",
+            subtitle = "Nothing-style pulse when a call arrives",
+            checked = prefs.incomingCallVibrationEnabled,
+            onCheckedChange = { onEvent(SettingsEvent.SetIncomingCallVibration(it)) },
+        )
+
+        SettingsSwitchRow(
+            title = "Hang-up vibration",
+            subtitle = "Short confirmation when a call ends",
+            checked = prefs.callEndVibrationEnabled,
+            onCheckedChange = { onEvent(SettingsEvent.SetCallEndVibration(it)) },
+        )
+
+        SettingsSwitchRow(
+            title = "Soft dial vibration",
+            subtitle = "Subtle haptic tick for dialpad keys",
+            checked = prefs.softDialVibrationEnabled,
+            onCheckedChange = { onEvent(SettingsEvent.SetSoftDialVibration(it)) },
+        )
+
+        SettingsSwitchRow(
+            title = "Triple back-tap answer/end",
+            subtitle = "Experimental accelerometer gesture while a call is active",
+            checked = prefs.backTapCallControlEnabled,
+            onCheckedChange = { onEvent(SettingsEvent.SetBackTapCallControl(it)) },
+        )
+
         SettingsNavigationRow(
             title = "Blocked numbers",
             subtitle = "Manage your block list",

@@ -371,9 +371,10 @@ class ContactsRepositoryImpl @Inject constructor(
             null, null, null,
         )?.use { c ->
             if (c.moveToFirst()) {
-                byKey[lookupKey] = MutableContact(
+                val resolvedLookupKey = c.getString(1) ?: lookupKey
+                byKey[resolvedLookupKey] = MutableContact(
                     id = c.getLong(0),
-                    lookupKey = c.getString(1) ?: lookupKey,
+                    lookupKey = resolvedLookupKey,
                     displayName = c.getString(2) ?: "",
                     photoUri = c.getString(3),
                     thumbnailUri = c.getString(4),

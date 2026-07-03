@@ -81,6 +81,24 @@
         android:theme="@style/Theme.GlyphDialer.Launch"
         tools:targetApi="35">
 
+        <!-- In-app WebRTC signaling config. The shipped placeholder keeps video-call
+             availability disabled until a real backend is configured. -->
+        <meta-data
+            android:name="com.glyphdialer.webrtc.SIGNALING_SCHEME"
+            android:value="@string/webrtc_signaling_scheme" />
+        <meta-data
+            android:name="com.glyphdialer.webrtc.SIGNALING_HOST"
+            android:value="@string/webrtc_signaling_host" />
+        <meta-data
+            android:name="com.glyphdialer.webrtc.SIGNALING_PORT"
+            android:value="@string/webrtc_signaling_port" />
+        <meta-data
+            android:name="com.glyphdialer.webrtc.SIGNALING_PATH"
+            android:value="@string/webrtc_signaling_path" />
+        <meta-data
+            android:name="com.glyphdialer.webrtc.SIGNALING_AUTH_TOKEN"
+            android:value="@string/webrtc_signaling_auth_token" />
+
         <!--
           The single Activity. Declared as a default-dialer-capable launcher so the OS
           can offer Glyph Dialer for the RoleManager.ROLE_DIALER role and route DIAL /

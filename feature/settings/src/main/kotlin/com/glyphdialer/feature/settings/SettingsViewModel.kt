@@ -118,6 +118,14 @@ class SettingsViewModel @Inject constructor(
 
             // ---- Calls ---------------------------------------------------------------
             is SettingsEvent.SetCallerIdSpam -> mutate { it.copy(callerIdSpamEnabled = event.enabled) }
+            is SettingsEvent.SetIncomingCallVibration ->
+                mutate { it.copy(incomingCallVibrationEnabled = event.enabled) }
+            is SettingsEvent.SetCallEndVibration ->
+                mutate { it.copy(callEndVibrationEnabled = event.enabled) }
+            is SettingsEvent.SetSoftDialVibration ->
+                mutate { it.copy(softDialVibrationEnabled = event.enabled) }
+            is SettingsEvent.SetBackTapCallControl ->
+                mutate { it.copy(backTapCallControlEnabled = event.enabled) }
 
             // ---- Recording -----------------------------------------------------------
             is SettingsEvent.SetRecordingEnabled -> onSetRecordingEnabled(event.enabled)

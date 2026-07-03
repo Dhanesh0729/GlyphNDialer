@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -72,6 +73,7 @@ import com.glyphdialer.feature.contacts.component.ContactAvatar
  * @param onNavigateUp pop the detail destination.
  * @param onEdit navigate to the edit destination for the given lookup key.
  * @param onDial host-provided dialer.
+ * @param onVideoDial host-provided in-app video caller.
  * @param onMessage host-provided SMS composer.
  */
 @Composable
@@ -79,6 +81,7 @@ fun ContactDetailRoute(
     onNavigateUp: () -> Unit,
     onEdit: (String) -> Unit,
     onDial: (String) -> Unit,
+    onVideoDial: (String) -> Unit,
     onMessage: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactDetailViewModel = hiltViewModel(),
@@ -90,6 +93,7 @@ fun ContactDetailRoute(
         viewModel.effects.collect { effect ->
             when (effect) {
                 is ContactDetailEffect.PlaceCall -> onDial(effect.number)
+                is ContactDetailEffect.PlaceVideoCall -> onVideoDial(effect.number)
                 is ContactDetailEffect.ComposeMessage -> onMessage(effect.number)
                 is ContactDetailEffect.NavigateToEdit -> onEdit(effect.lookupKey)
                 ContactDetailEffect.NavigateUpAfterDelete -> onNavigateUp()
@@ -264,7 +268,9 @@ private fun DetailBody(
                 isDefault = number.dialValue == uiState.effectiveDefaultNumber,
                 assignedSlot = uiState.assignedSpeedDialSlots.entries
                     .firstOrNull { it.value == number.dialValue }?.key,
+                videoCallEnabled = uiState.videoCallAvailable,
                 onCall = { onEvent(ContactDetailEvent.CallNumber(number.dialValue)) },
+                onVideoCall = { onEvent(ContactDetailEvent.VideoCallNumber(number.dialValue)) },
                 onMessage = { onEvent(ContactDetailEvent.MessageNumber(number.dialValue)) },
                 onSetDefault = { onEvent(ContactDetailEvent.SetDefaultNumber(number.dialValue)) },
                 onSpeedDial = { onEvent(ContactDetailEvent.OpenSpeedDial(number)) },
@@ -319,7 +325,9 @@ private fun NumberRow(
     number: PhoneNumber,
     isDefault: Boolean,
     assignedSlot: Int?,
+    videoCallEnabled: Boolean,
     onCall: () -> Unit,
+    onVideoCall: () -> Unit,
     onMessage: () -> Unit,
     onSetDefault: () -> Unit,
     onSpeedDial: () -> Unit,
@@ -360,6 +368,9 @@ private fun NumberRow(
         }
         IconButton(onClick = onMessage) {
             Icon(Icons.AutoMirrored.Filled.Message, contentDescription = "Message")
+        }
+        IconButton(onClick = onVideoCall, enabled = videoCallEnabled) {
+            Icon(Icons.Filled.Videocam, contentDescription = "Video call")
         }
         IconButton(onClick = onCall) {
             Icon(Icons.Filled.Call, contentDescription = "Call", tint = LocalAccentColor.current)

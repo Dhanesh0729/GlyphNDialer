@@ -13,4 +13,11 @@
       non-Nothing hardware the key is irrelevant — the GlyphController no-ops (§9).
     -->
     <string name="nothing_api_key" translatable="false">test</string>
+
+    <!-- WebRTC signaling defaults. Replace these for production in-app audio/video calls. -->
+    <string name="webrtc_signaling_scheme" translatable="false">wss</string>
+    <string name="webrtc_signaling_host" translatable="false">signaling.invalid.glyphdialer.example</string>
+    <string name="webrtc_signaling_port" translatable="false">443</string>
+    <string name="webrtc_signaling_path" translatable="false">/rtc/{session}</string>
+    <string name="webrtc_signaling_auth_token" translatable="false"></string>
 </resources>

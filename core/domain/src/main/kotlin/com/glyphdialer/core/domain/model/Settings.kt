@@ -99,6 +99,15 @@ data class UserPreferences(
     val transcriptionLanguage: String? = null,
     // Calls
     val callerIdSpamEnabled: Boolean = true,
+    val incomingCallVibrationEnabled: Boolean = true,
+    val callEndVibrationEnabled: Boolean = true,
+    val softDialVibrationEnabled: Boolean = true,
+    /**
+     * Best-effort accelerometer gesture while an in-call service is active. Android
+     * exposes no public Pixel/Nothing "back tap" API, so this is intentionally
+     * experimental and user-controlled.
+     */
+    val backTapCallControlEnabled: Boolean = false,
     /** Subscription id of the preferred default SIM on dual-SIM devices, or null. */
     val defaultSimSubscriptionId: Int? = null,
     /** Filter contacts to a single account type (e.g. "com.google"), or null for all. */

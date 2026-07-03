@@ -103,6 +103,10 @@ sealed interface SettingsEvent {
 
     // ---- Calls ---------------------------------------------------------------------
     data class SetCallerIdSpam(val enabled: Boolean) : SettingsEvent
+    data class SetIncomingCallVibration(val enabled: Boolean) : SettingsEvent
+    data class SetCallEndVibration(val enabled: Boolean) : SettingsEvent
+    data class SetSoftDialVibration(val enabled: Boolean) : SettingsEvent
+    data class SetBackTapCallControl(val enabled: Boolean) : SettingsEvent
 
     // ---- Recording -----------------------------------------------------------------
     data class SetRecordingEnabled(val enabled: Boolean) : SettingsEvent

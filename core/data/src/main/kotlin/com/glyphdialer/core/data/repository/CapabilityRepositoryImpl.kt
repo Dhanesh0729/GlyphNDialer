@@ -86,8 +86,7 @@ class CapabilityRepositoryImpl @Inject constructor(
             isDefaultDialer = isDefaultDialer(),
             // Stock Android NEVER exposes remote call audio to third-party apps.
             systemCallAudio = deviceTier == RecordingTier.SYSTEM_TWO_WAY,
-            // VoIP reachability is owned by :peripheral:webrtc; conservative false here.
-            voipAvailable = false,
+            voipAvailable = isVoipConfigured(),
             // VVM is line-dependent; resolved by VoicemailRepository at use time.
             vvmSupported = false,
             microphoneAvailable = microphoneAvailable,
@@ -106,6 +105,19 @@ class CapabilityRepositoryImpl @Inject constructor(
             tm?.defaultDialerPackage == context.packageName
         }
     }.getOrDefault(false)
+
+    private fun isVoipConfigured(): Boolean = runCatching {
+        val meta = context.packageManager
+            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+            .metaData
+        val host = meta?.getString(META_SIGNALING_HOST).orEmpty()
+        host.isNotBlank() && host != PLACEHOLDER_SIGNALING_HOST
+    }.getOrDefault(false)
+
+    private companion object {
+        const val META_SIGNALING_HOST = "com.glyphdialer.webrtc.SIGNALING_HOST"
+        const val PLACEHOLDER_SIGNALING_HOST = "signaling.invalid.glyphdialer.example"
+    }
 }
 
 /**

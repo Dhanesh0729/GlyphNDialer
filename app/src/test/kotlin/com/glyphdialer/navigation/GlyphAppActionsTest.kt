@@ -14,23 +14,27 @@ class GlyphAppActionsTest {
     @Test
     fun `actions forward their arguments to the supplied lambdas`() {
         val dialed = mutableListOf<String>()
+        val videoDialed = mutableListOf<String>()
         val messaged = mutableListOf<String>()
         val added = mutableListOf<String>()
         val details = mutableListOf<String>()
 
         val actions = GlyphAppActions(
             dial = { dialed += it },
+            videoDial = { videoDialed += it },
             message = { messaged += it },
             addContact = { added += it },
             openNumberDetails = { details += it },
         )
 
         actions.dial("+15551234567")
+        actions.videoDial("+15550001111")
         actions.message("+15557654321")
         actions.addContact("100")
         actions.openNumberDetails("200")
 
         assertThat(dialed).containsExactly("+15551234567")
+        assertThat(videoDialed).containsExactly("+15550001111")
         assertThat(messaged).containsExactly("+15557654321")
         assertThat(added).containsExactly("100")
         assertThat(details).containsExactly("200")

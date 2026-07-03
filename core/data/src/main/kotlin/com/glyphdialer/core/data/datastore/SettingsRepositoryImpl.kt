@@ -100,6 +100,10 @@ class SettingsRepositoryImpl @Inject constructor(
             autoTranscribe = this[Keys.AUTO_TRANSCRIBE] ?: defaults.autoTranscribe,
             transcriptionLanguage = this[Keys.TRANSCRIPTION_LANGUAGE],
             callerIdSpamEnabled = this[Keys.CALLER_ID_SPAM] ?: defaults.callerIdSpamEnabled,
+            incomingCallVibrationEnabled = this[Keys.INCOMING_CALL_VIBRATION] ?: defaults.incomingCallVibrationEnabled,
+            callEndVibrationEnabled = this[Keys.CALL_END_VIBRATION] ?: defaults.callEndVibrationEnabled,
+            softDialVibrationEnabled = this[Keys.SOFT_DIAL_VIBRATION] ?: defaults.softDialVibrationEnabled,
+            backTapCallControlEnabled = this[Keys.BACK_TAP_CALL_CONTROL] ?: defaults.backTapCallControlEnabled,
             defaultSimSubscriptionId = this[Keys.DEFAULT_SIM_SUB_ID],
             contactsAccountFilter = this[Keys.CONTACTS_ACCOUNT_FILTER],
         )
@@ -123,6 +127,10 @@ class SettingsRepositoryImpl @Inject constructor(
         this[Keys.AUTO_TRANSCRIBE] = p.autoTranscribe
         setOrRemove(Keys.TRANSCRIPTION_LANGUAGE, p.transcriptionLanguage)
         this[Keys.CALLER_ID_SPAM] = p.callerIdSpamEnabled
+        this[Keys.INCOMING_CALL_VIBRATION] = p.incomingCallVibrationEnabled
+        this[Keys.CALL_END_VIBRATION] = p.callEndVibrationEnabled
+        this[Keys.SOFT_DIAL_VIBRATION] = p.softDialVibrationEnabled
+        this[Keys.BACK_TAP_CALL_CONTROL] = p.backTapCallControlEnabled
         setOrRemove(Keys.DEFAULT_SIM_SUB_ID, p.defaultSimSubscriptionId)
         setOrRemove(Keys.CONTACTS_ACCOUNT_FILTER, p.contactsAccountFilter)
     }
@@ -157,6 +165,10 @@ class SettingsRepositoryImpl @Inject constructor(
         val AUTO_TRANSCRIBE = booleanPreferencesKey("auto_transcribe")
         val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
         val CALLER_ID_SPAM = booleanPreferencesKey("caller_id_spam_enabled")
+        val INCOMING_CALL_VIBRATION = booleanPreferencesKey("incoming_call_vibration_enabled")
+        val CALL_END_VIBRATION = booleanPreferencesKey("call_end_vibration_enabled")
+        val SOFT_DIAL_VIBRATION = booleanPreferencesKey("soft_dial_vibration_enabled")
+        val BACK_TAP_CALL_CONTROL = booleanPreferencesKey("back_tap_call_control_enabled")
         val DEFAULT_SIM_SUB_ID = intPreferencesKey("default_sim_subscription_id")
         val CONTACTS_ACCOUNT_FILTER = stringPreferencesKey("contacts_account_filter")
     }

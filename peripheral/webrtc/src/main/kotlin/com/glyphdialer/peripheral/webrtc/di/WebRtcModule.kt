@@ -2,6 +2,7 @@
 package com.glyphdialer.peripheral.webrtc.di
 
 import android.content.Context
+import android.content.pm.PackageManager
 import com.glyphdialer.core.domain.repository.WebRtcClient
 import com.glyphdialer.peripheral.webrtc.IceConfig
 import com.glyphdialer.peripheral.webrtc.WebRtcClientImpl
@@ -107,8 +108,10 @@ abstract class WebRtcModule {
          */
         @Provides
         @Singleton
-        fun provideSignalingConfig(): SignalingConfig {
-            val config = SignalingConfig()
+        fun provideSignalingConfig(
+            @ApplicationContext context: Context,
+        ): SignalingConfig {
+            val config = context.readSignalingConfig()
             if (config.isPlaceholder) {
                 Timber.w(
                     "Using placeholder SignalingConfig (%s). In-app VoIP will NOT " +
@@ -134,5 +137,25 @@ abstract class WebRtcModule {
                 )
             }
         }
+
+        private fun Context.readSignalingConfig(): SignalingConfig {
+            val meta = runCatching {
+                packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA).metaData
+            }.getOrNull()
+            val defaults = SignalingConfig()
+            return SignalingConfig(
+                scheme = meta?.getString(META_SIGNALING_SCHEME)?.takeIf { it.isNotBlank() } ?: defaults.scheme,
+                host = meta?.getString(META_SIGNALING_HOST)?.takeIf { it.isNotBlank() } ?: defaults.host,
+                port = meta?.getString(META_SIGNALING_PORT)?.toIntOrNull() ?: defaults.port,
+                path = meta?.getString(META_SIGNALING_PATH)?.takeIf { it.isNotBlank() } ?: defaults.path,
+                authToken = meta?.getString(META_SIGNALING_AUTH_TOKEN)?.takeIf { it.isNotBlank() },
+            )
+        }
+
+        private const val META_SIGNALING_SCHEME = "com.glyphdialer.webrtc.SIGNALING_SCHEME"
+        private const val META_SIGNALING_HOST = "com.glyphdialer.webrtc.SIGNALING_HOST"
+        private const val META_SIGNALING_PORT = "com.glyphdialer.webrtc.SIGNALING_PORT"
+        private const val META_SIGNALING_PATH = "com.glyphdialer.webrtc.SIGNALING_PATH"
+        private const val META_SIGNALING_AUTH_TOKEN = "com.glyphdialer.webrtc.SIGNALING_AUTH_TOKEN"
     }
 }

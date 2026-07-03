@@ -41,14 +41,16 @@ data class SignalingConfig(
 
     /** True when this config is still the shipped placeholder (no real backend set). */
     val isPlaceholder: Boolean
-        get() = host == DEFAULT_HOST
+        get() = host == PLACEHOLDER_HOST
 
     companion object {
         const val SESSION_PLACEHOLDER: String = "{session}"
 
         // TODO(backend): replace these placeholders with your deployment values.
+        const val PLACEHOLDER_HOST = "signaling.invalid.glyphdialer.example"
+
         private const val DEFAULT_SCHEME = "wss"
-        private const val DEFAULT_HOST = "signaling.invalid.glyphdialer.example"
+        private const val DEFAULT_HOST = PLACEHOLDER_HOST
         private const val DEFAULT_PORT = 443
         private const val DEFAULT_PATH = "/rtc/{session}"
 

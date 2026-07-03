@@ -262,6 +262,7 @@ class DialpadViewModel @Inject constructor(
                 Timber.w(it, "Failed to play DTMF tone for %s", digit)
             }
         }
+        if (!preferences.value.softDialVibrationEnabled) return
         vibrator?.let { v ->
             if (v.hasVibrator()) {
                 runCatching {

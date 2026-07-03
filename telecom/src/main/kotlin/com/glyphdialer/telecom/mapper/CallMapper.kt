@@ -4,6 +4,7 @@ package com.glyphdialer.telecom.mapper
 import android.os.Build
 import android.telecom.Call
 import android.telecom.DisconnectCause
+import android.telecom.VideoProfile
 import com.glyphdialer.core.domain.model.CallCapability
 import com.glyphdialer.core.domain.model.CallDirection
 import com.glyphdialer.core.domain.model.CallModel
@@ -145,7 +146,8 @@ internal object CallMapper {
      * cellular call always maps to false; VoIP video is tracked by the WebRtcClient
      * and reconciled by the ConnectionService bridge, not read from here.
      */
-    private fun isVideoActive(@Suppress("UNUSED_PARAMETER") details: Call.Details): Boolean = false
+    private fun isVideoActive(details: Call.Details): Boolean =
+        isSelfManaged(details) && details.videoState != VideoProfile.STATE_AUDIO_ONLY
 
     private fun toDisconnectMessage(cause: DisconnectCause?): String? {
         cause ?: return null

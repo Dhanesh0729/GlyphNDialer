@@ -14,13 +14,22 @@ import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.glyphdialer.core.common.Constants
+import com.glyphdialer.core.common.dispatchers.Dispatcher
+import com.glyphdialer.core.common.dispatchers.GlyphDispatcher
 import com.glyphdialer.core.domain.model.CallModel
 import com.glyphdialer.core.domain.model.CallState
+import com.glyphdialer.core.domain.model.UserPreferences
+import com.glyphdialer.core.domain.repository.SettingsRepository
 import com.glyphdialer.telecom.service.GlyphInCallService
 import com.glyphdialer.telecom.CallRegistry
 import com.glyphdialer.telecom.R
 import com.glyphdialer.core.domain.model.AudioRoute
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,12 +48,22 @@ import com.glyphdialer.telecom.Constants as TelecomConstants
 @Singleton
 class CallNotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
+    settings: SettingsRepository,
+    @Dispatcher(GlyphDispatcher.DEFAULT) scopeDispatcher: CoroutineDispatcher,
 ) {
 
     private val manager = NotificationManagerCompat.from(context)
+    private val scope = CoroutineScope(SupervisorJob() + scopeDispatcher)
 
     @Volatile private var channelsReady = false
     @Volatile private var lastIncomingVibratedCallId: String? = null
+    @Volatile private var preferences: UserPreferences = UserPreferences()
+
+    init {
+        settings.preferences
+            .onEach { preferences = it }
+            .launchIn(scope)
+    }
 
     /** Update both notification surfaces from the current call set. */
     fun update(calls: List<CallModel>, primary: CallModel?) {
@@ -89,7 +108,6 @@ class CallNotificationManager @Inject constructor(
             .setSubText("Glyph Dialer")
             .setTicker("Incoming call from $title")
             .setColor(0xFFD7263D.toInt())
-            .setVibrate(INCOMING_VIBRATION_PATTERN)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
@@ -103,7 +121,10 @@ class CallNotificationManager @Inject constructor(
                     actionPendingIntent(GlyphInCallService.ACTION_ANSWER, call.id)
                 )
             )
-        vibrateIncoming(call.id)
+        if (preferences.incomingCallVibrationEnabled) {
+            builder.setVibrate(INCOMING_VIBRATION_PATTERN)
+            vibrateIncoming(call.id)
+        }
         runCatching { manager.notify(Constants.NotificationIds.INCOMING_CALL, builder.build()) }
         manager.cancel(Constants.NotificationIds.ONGOING_CALL)
     }
@@ -212,6 +233,11 @@ class CallNotificationManager @Inject constructor(
             .build()
     }
 
+    fun vibrateCallEnded() {
+        if (!preferences.callEndVibrationEnabled) return
+        vibratePattern(CALL_END_VIBRATION_PATTERN, "Call-end vibration failed")
+    }
+
     // --- Intents ---------------------------------------------------------------
 
     private fun inCallIntent(showDialpad: Boolean): Intent =
@@ -296,6 +322,10 @@ class CallNotificationManager @Inject constructor(
     private fun vibrateIncoming(callId: String) {
         if (lastIncomingVibratedCallId == callId) return
         lastIncomingVibratedCallId = callId
+        vibratePattern(INCOMING_VIBRATION_PATTERN, "Incoming-call vibration failed")
+    }
+
+    private fun vibratePattern(pattern: LongArray, failureLog: String) {
         val vibrator = runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 context.getSystemService(VibratorManager::class.java)?.defaultVibrator
@@ -307,12 +337,12 @@ class CallNotificationManager @Inject constructor(
         if (!vibrator.hasVibrator()) return
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createWaveform(INCOMING_VIBRATION_PATTERN, -1))
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
             } else {
                 @Suppress("DEPRECATION")
-                vibrator.vibrate(INCOMING_VIBRATION_PATTERN, -1)
+                vibrator.vibrate(pattern, -1)
             }
-        }.onFailure { Timber.tag(TelecomConstants.TAG).w(it, "Incoming-call vibration failed") }
+        }.onFailure { Timber.tag(TelecomConstants.TAG).w(it, failureLog) }
     }
     private fun canPost(): Boolean {
         val granted = manager.areNotificationsEnabled()
@@ -331,6 +361,7 @@ class CallNotificationManager @Inject constructor(
         const val EXTRA_INCOMING: String = "com.glyphdialer.extra.INCOMING"
 
         private val INCOMING_VIBRATION_PATTERN = longArrayOf(0, 90, 70, 90, 180, 220)
+        private val CALL_END_VIBRATION_PATTERN = longArrayOf(0, 45, 60, 90)
 
         private const val REQ_CONTENT = 0x0C01
         private const val REQ_FULLSCREEN = 0x0C02

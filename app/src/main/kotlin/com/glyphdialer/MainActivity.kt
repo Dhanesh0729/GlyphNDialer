@@ -24,6 +24,7 @@ import com.glyphdialer.core.designsystem.theme.GlyphTheme
 import com.glyphdialer.navigation.GlyphApp
 import com.glyphdialer.navigation.GlyphAppActions
 import com.glyphdialer.navigation.openInCall
+import com.glyphdialer.telecom.service.GlyphConnectionService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -157,6 +158,7 @@ class MainActivity : ComponentActivity() {
 
     private fun buildAppActions(): GlyphAppActions = GlyphAppActions(
         dial = ::placeCall,
+        videoDial = ::placeVideoCall,
         message = ::composeSms,
         addContact = ::insertContact,
         openNumberDetails = ::placeCall, // tap-to-call-back from a Recents row.
@@ -179,6 +181,23 @@ class MainActivity : ComponentActivity() {
                 .onSuccess { return }
         }
         startActivitySafely(Intent(Intent.ACTION_DIAL, uri), "dial")
+    }
+
+    /**
+     * Start an in-app WebRTC video call through our self-managed PhoneAccount.
+     * This is intentionally separate from [placeCall]: third-party dialers cannot
+     * place carrier video calls, so video here means app-to-app VoIP only.
+     */
+    private fun placeVideoCall(number: String) {
+        val placed = GlyphConnectionService.placeVoipCall(
+            context = this,
+            number = number,
+            startWithVideo = true,
+        )
+        if (!placed) {
+            Timber.w("Video call could not start; falling back to normal dial UI")
+            placeCall(number)
+        }
     }
 
     private fun composeSms(number: String) {

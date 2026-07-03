@@ -136,6 +136,7 @@ fun GlyphApp(
             contactsGraph(
                 navController = navController,
                 onDial = actions.dial,
+                onVideoDial = actions.videoDial,
                 onMessage = actions.message,
                 onNavigateUp = { navController.popBackStack() },
             )

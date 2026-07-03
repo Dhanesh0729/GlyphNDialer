@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.telecom.Connection
 import android.telecom.ConnectionRequest
 import android.telecom.ConnectionService
@@ -12,6 +13,7 @@ import android.telecom.DisconnectCause
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
+import android.telecom.VideoProfile
 import androidx.annotation.RequiresApi
 import com.glyphdialer.core.domain.glyph.GlyphController
 import com.glyphdialer.core.domain.repository.WebRtcClient
@@ -53,8 +55,16 @@ class GlyphConnectionService : ConnectionService() {
         val sessionId = request?.extras?.getString(Constants.EXTRA_SESSION_ID)
             ?: request?.address?.schemeSpecificPart
             ?: "voip-${System.currentTimeMillis()}"
+        val startWithVideo = request?.extras?.getBoolean(Constants.EXTRA_START_WITH_VIDEO, false) == true
         Timber.tag(Constants.TAG).i("Outgoing self-managed connection session=%s", sessionId)
-        return GlyphConnection(sessionId, request?.address, webRtcClient, glyphController, outgoing = true)
+        return GlyphConnection(
+            sessionId = sessionId,
+            address = request?.address,
+            webRtcClient = webRtcClient,
+            glyphController = glyphController,
+            outgoing = true,
+            startWithVideo = startWithVideo,
+        )
             .also { it.setDialing() }
     }
 
@@ -65,7 +75,14 @@ class GlyphConnectionService : ConnectionService() {
         val sessionId = request?.extras?.getString(Constants.EXTRA_SESSION_ID)
             ?: "voip-${System.currentTimeMillis()}"
         Timber.tag(Constants.TAG).i("Incoming self-managed connection session=%s", sessionId)
-        return GlyphConnection(sessionId, request?.address, webRtcClient, glyphController, outgoing = false)
+        return GlyphConnection(
+            sessionId = sessionId,
+            address = request?.address,
+            webRtcClient = webRtcClient,
+            glyphController = glyphController,
+            outgoing = false,
+            startWithVideo = false,
+        )
             .also { it.setRinging() }
     }
 
@@ -111,6 +128,33 @@ class GlyphConnectionService : ConnectionService() {
             val telecom = context.getSystemService(TelecomManager::class.java) ?: return
             runCatching { telecom.unregisterPhoneAccount(handle(context)) }
         }
+
+        /**
+         * Place an in-app VoIP call through the self-managed PhoneAccount.
+         * [startWithVideo] requests camera/video negotiation in the initial offer.
+         */
+        fun placeVoipCall(
+            context: Context,
+            number: String,
+            startWithVideo: Boolean,
+        ): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+            val telecom = context.getSystemService(TelecomManager::class.java) ?: return false
+            registerPhoneAccount(context)
+            val sessionId = "voip-${number.hashCode()}-${System.currentTimeMillis()}"
+            val extras = Bundle().apply {
+                putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle(context))
+                putString(Constants.EXTRA_SESSION_ID, sessionId)
+                putBoolean(Constants.EXTRA_IS_VOIP, true)
+                putBoolean(Constants.EXTRA_START_WITH_VIDEO, startWithVideo)
+            }
+            return runCatching {
+                telecom.placeCall(Uri.fromParts("tel", number, null), extras)
+                true
+            }.onFailure {
+                Timber.tag(Constants.TAG).w(it, "Failed to place self-managed VoIP call")
+            }.getOrDefault(false)
+        }
     }
 }
 
@@ -126,6 +170,7 @@ private class GlyphConnection(
     private val webRtcClient: WebRtcClient,
     private val glyphController: GlyphController,
     private val outgoing: Boolean,
+    private val startWithVideo: Boolean,
 ) : Connection() {
 
     private val job = SupervisorJob()
@@ -148,7 +193,14 @@ private class GlyphConnection(
         webRtcClient.state
             .onEach { st ->
                 when (st) {
-                    WebRtcState.CONNECTED, WebRtcState.VIDEO -> if (state != STATE_ACTIVE) setActive()
+                    WebRtcState.CONNECTED -> {
+                        if (state != STATE_ACTIVE) setActive()
+                        setVideoState(VideoProfile.STATE_AUDIO_ONLY)
+                    }
+                    WebRtcState.VIDEO -> {
+                        if (state != STATE_ACTIVE) setActive()
+                        setVideoState(VideoProfile.STATE_BIDIRECTIONAL)
+                    }
                     WebRtcState.RECONNECTING, WebRtcState.CONNECTING -> { /* keep current */ }
                     WebRtcState.FAILED -> setDisconnected(DisconnectCause(DisconnectCause.ERROR))
                     WebRtcState.DISCONNECTED, WebRtcState.IDLE -> {
@@ -209,7 +261,11 @@ private class GlyphConnection(
         if (outgoing && newState == STATE_DIALING) {
             scope.launch {
                 webRtcClient.connect(sessionId)
-                webRtcClient.createOffer()
+                if (startWithVideo) {
+                    webRtcClient.addVideo()
+                } else {
+                    webRtcClient.createOffer()
+                }
             }
         }
     }

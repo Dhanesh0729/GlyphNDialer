@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,7 +51,6 @@ import com.glyphdialer.core.domain.model.BlockedNumber
 import com.glyphdialer.core.domain.model.PhoneNumber
 import com.glyphdialer.core.domain.model.ThemeMode
 import com.glyphdialer.core.ui.component.DottedDivider
-import com.glyphdialer.core.ui.component.EmptyState
 import com.glyphdialer.feature.settings.component.DisclaimerBlock
 
 /**
@@ -147,10 +147,7 @@ fun BlockedNumbersScreen(
                         )
                     }
 
-                    uiState.isEmpty -> EmptyState(
-                        title = "No blocked numbers",
-                        message = "Numbers you block will appear here.",
-                        icon = Icons.Filled.Block,
+                    uiState.isEmpty -> BlockedNumbersEmptyState(
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = Dimens.spaceXxl),
                     )
 
@@ -170,6 +167,36 @@ fun BlockedNumbersScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun BlockedNumbersEmptyState(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = Dimens.spaceLg),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Block,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "NO BLOCKED\nNUMBERS",
+            style = MaterialTheme.typography.titleMedium.merge(NumberStyle),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+        )
+        Text(
+            text = "Numbers you block will appear here.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
