@@ -11,6 +11,7 @@ import com.glyphdialer.core.common.appResultOfSuspend
 import com.glyphdialer.core.common.dispatchers.Dispatcher
 import com.glyphdialer.core.common.dispatchers.GlyphDispatcher
 import com.glyphdialer.core.common.getOrElse
+import com.glyphdialer.core.common.getOrNull
 import com.glyphdialer.core.data.db.dao.RecordingDao
 import com.glyphdialer.core.data.db.dao.TranscriptDao
 import com.glyphdialer.core.data.mapper.toDomain
@@ -20,6 +21,7 @@ import com.glyphdialer.core.domain.model.Recording
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.repository.CallRecorder
 import com.glyphdialer.core.domain.repository.RecordingRepository
+import com.glyphdialer.core.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -50,6 +52,7 @@ class RecordingRepositoryImpl @Inject constructor(
     private val recordingDao: RecordingDao,
     private val transcriptDao: TranscriptDao,
     private val recorder: CallRecorder,
+    private val settingsRepository: SettingsRepository,
     @Dispatcher(GlyphDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : RecordingRepository {
 
@@ -73,6 +76,10 @@ class RecordingRepositoryImpl @Inject constructor(
                 throw IllegalStateException(failure.message ?: "Recorder failed to start", failure.error)
             }
 
+            // §2.2: the recorder plays an audible announcement unless the user opted out.
+            // Persist that state honestly so history shows whether the other party was told.
+            val noAnnouncement = settingsRepository.current().getOrNull()?.recordingNoAnnouncement ?: false
+
             val recording = Recording(
                 id = UUID.randomUUID().toString(),
                 callId = call.id,
@@ -82,7 +89,7 @@ class RecordingRepositoryImpl @Inject constructor(
                 durationMillis = 0L,
                 tier = tier,
                 filePath = path,
-                announced = true,
+                announced = !noAnnouncement,
             )
             withContext(ioDispatcher) { recordingDao.upsert(recording.toEntity()) }
             pending = recording

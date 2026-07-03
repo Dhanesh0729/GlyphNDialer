@@ -217,17 +217,22 @@ See [GLYPH_SETUP.md](GLYPH_SETUP.md).
 
 ```kotlin
 interface CallRecorder {
-    fun supportedTier(): RecordingTier   // SYSTEM_TWO_WAY | VOIP_TWO_WAY | LOCAL_ONE_SIDED | UNAVAILABLE
+    fun supportedTier(): RecordingTier   // SYSTEM_TWO_WAY | VOIP_TWO_WAY | SPEAKER_TWO_WAY | LOCAL_ONE_SIDED | UNAVAILABLE
     // start / stop ...
 }
 ```
 
 - Resolves the **highest supported tier** at call start and the UI shows it
-  ("Recording: two-way" / "my side only" / "unavailable"). See the README *Reality &
-  limitations* table.
-- Tier A (system/OEM call audio) is the only reliable two-sided cellular capture; Tier B
-  (VoIP/WebRTC) records both tracks because the app owns the media; Tier C is local mic
-  only and must be labelled "my side only", never presented as full call recording.
+  ("Recording: two-way" / "two-way (speakerphone)" / "my side only" / "unavailable").
+  See the README *Reality & limitations* table.
+- Tier A (system/OEM call audio) is the only reliable clean two-sided cellular capture;
+  Tier B (VoIP/WebRTC) records both tracks because the app owns the media; Tier C
+  (`SPEAKER_TWO_WAY`) routes stock cellular calls to the loudspeaker so the mic captures
+  both sides acoustically (`SpeakerphoneTwoWayRecorder`, lower fidelity — degrades to
+  Tier D if it can't engage speaker); Tier D is local mic only, labelled "my side only"
+  and never presented as full call recording.
+- Recording starts with an audible announcement (`RecordingAnnouncer`: TTS, tone
+  fallback) unless the user disabled it; `Recording.announced` records whether it fired.
 - Storage: encrypted audio in app-private storage (MediaStore opt-in for export);
   metadata in Room (`RecordingEntity`); Media3 player with waveform scrubber; export
   behind an explicit consent dialog. Auto-purge via `PurgeOldDataWorker` honours the

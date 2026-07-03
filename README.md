@@ -39,12 +39,16 @@ UI**:
 |---|---|---|---|
 | A | `SYSTEM_TWO_WAY` | Both sides, full quality | Default dialer on an OEM/system build, custom ROM, or rooted device that exposes call audio |
 | B | `VOIP_TWO_WAY` | Both sides, full quality | In-app WebRTC VoIP calls (the app owns the media) |
-| C | `LOCAL_ONE_SIDED` | **Your side only** — labelled "my side only", not full call recording | Local mic capture where permitted |
+| C | `SPEAKER_TWO_WAY` | **Both sides via speakerphone** — the call is routed to the loudspeaker so the mic captures the other party too. Lower fidelity; forces speaker | Stock cellular calls where the app can engage the speaker route (degrades to local-only otherwise) |
+| D | `LOCAL_ONE_SIDED` | **Your side only** — labelled "my side only", not full call recording | Fallback when the speaker route can't be engaged |
 | — | `UNAVAILABLE` | Nothing | Recording not possible on this device/call |
 
-"Record without announcement" is **jurisdiction-dependent** and may be illegal in
-two-party-consent regions. The setting exists but ships with a disclaimer; the app
-never bypasses an OS-mandated announcement. See [LEGAL.md](LEGAL.md).
+**Announcement.** Recording starts with an audible "this call is being recorded"
+announcement (spoken via TTS, or a tone if TTS is unavailable). On the speakerphone
+tier the other party hears it too. "Record without announcement" turns this off, but
+it is **jurisdiction-dependent** and may be illegal in two-party-consent regions — the
+setting ships with a disclaimer, and the app never bypasses an OS-mandated
+announcement. See [LEGAL.md](LEGAL.md).
 
 ### No carrier video
 

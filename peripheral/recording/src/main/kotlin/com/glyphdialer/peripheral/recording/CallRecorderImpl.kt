@@ -48,6 +48,7 @@ class CallRecorderImpl @Inject constructor(
     private val store: EncryptedRecordingStore,
     private val systemRecorder: Provider<SystemCallAudioRecorder>,
     private val voipRecorder: Provider<VoipTrackRecorder>,
+    private val speakerRecorder: Provider<SpeakerphoneTwoWayRecorder>,
     private val localRecorder: Provider<LocalSideRecorder>,
     @Dispatcher(GlyphDispatcher.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : CallRecorder {
@@ -144,6 +145,8 @@ class CallRecorderImpl @Inject constructor(
         val ordered = when (tier) {
             RecordingTier.SYSTEM_TWO_WAY -> listOf(RecordingTier.SYSTEM_TWO_WAY, RecordingTier.LOCAL_ONE_SIDED)
             RecordingTier.VOIP_TWO_WAY -> listOf(RecordingTier.VOIP_TWO_WAY) // no honest fallback for VoIP
+            // Speaker two-way degrades to local-only if the loudspeaker can't be engaged.
+            RecordingTier.SPEAKER_TWO_WAY -> listOf(RecordingTier.SPEAKER_TWO_WAY, RecordingTier.LOCAL_ONE_SIDED)
             RecordingTier.LOCAL_ONE_SIDED -> listOf(RecordingTier.LOCAL_ONE_SIDED)
             RecordingTier.UNAVAILABLE -> emptyList()
         }
@@ -177,6 +180,7 @@ class CallRecorderImpl @Inject constructor(
     private fun engineFor(tier: RecordingTier): TierCaptureEngine = when (tier) {
         RecordingTier.SYSTEM_TWO_WAY -> systemRecorder.get()
         RecordingTier.VOIP_TWO_WAY -> voipRecorder.get()
+        RecordingTier.SPEAKER_TWO_WAY -> speakerRecorder.get()
         RecordingTier.LOCAL_ONE_SIDED -> localRecorder.get()
         RecordingTier.UNAVAILABLE -> error("No engine for UNAVAILABLE tier")
     }

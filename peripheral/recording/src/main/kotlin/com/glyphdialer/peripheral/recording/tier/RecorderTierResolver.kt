@@ -22,7 +22,9 @@ import javax.inject.Singleton
  * [RecordingTier.SYSTEM_TWO_WAY] unless we have a concrete, positive signal that the
  * OEM/system build exposes call audio AND we are the default dialer. Otherwise we fall
  * to [RecordingTier.VOIP_TWO_WAY] for in-app calls (we own both media tracks),
- * [RecordingTier.LOCAL_ONE_SIDED] when only the mic is usable, or
+ * [RecordingTier.SPEAKER_TWO_WAY] on stock devices (route the call to the loudspeaker
+ * so the mic captures both sides acoustically — engaged at capture time; degrades to
+ * [RecordingTier.LOCAL_ONE_SIDED] if the speaker route can't be set), or
  * [RecordingTier.UNAVAILABLE] when RECORD_AUDIO is denied.
  *
  * Detection strategy (documented so reviewers can audit the honesty claim):
@@ -30,7 +32,8 @@ import javax.inject.Singleton
  *  - In-app VoIP call ([CallModel.isVoip])     -> VOIP_TWO_WAY (we own the tracks).
  *  - System call audio detectable AND default  -> SYSTEM_TWO_WAY (Tier A, OEM-gated).
  *    dialer
- *  - Otherwise                                 -> LOCAL_ONE_SIDED ("my side only").
+ *  - Otherwise (mic available)                 -> SPEAKER_TWO_WAY (loudspeaker capture;
+ *    the recorder honestly downgrades to LOCAL_ONE_SIDED if it can't engage speaker).
  *
  * "System call audio detectable" is deliberately hard to satisfy. We require ALL of:
  *  1. We hold the default-dialer role (otherwise we have no call session at all).
@@ -63,8 +66,11 @@ class RecorderTierResolver @Inject constructor(
             Timber.d("Tier resolve (baseline): system call audio detected -> SYSTEM_TWO_WAY")
             return RecordingTier.SYSTEM_TWO_WAY
         }
-        Timber.d("Tier resolve (baseline): stock device -> LOCAL_ONE_SIDED")
-        return RecordingTier.LOCAL_ONE_SIDED
+        // Stock device: the honest best-effort is speakerphone two-way (the recorder
+        // engages the loudspeaker at capture time, and degrades to LOCAL_ONE_SIDED if it
+        // can't). See [SpeakerphoneTwoWayRecorder].
+        Timber.d("Tier resolve (baseline): stock device -> SPEAKER_TWO_WAY")
+        return RecordingTier.SPEAKER_TWO_WAY
     }
 
     /**
@@ -94,8 +100,10 @@ class RecorderTierResolver @Inject constructor(
             return RecordingTier.SYSTEM_TWO_WAY
         }
 
-        Timber.d("Tier resolve for call %s: stock cellular -> LOCAL_ONE_SIDED", call.id)
-        return RecordingTier.LOCAL_ONE_SIDED
+        // Stock cellular: speakerphone two-way (honest downgrade to LOCAL_ONE_SIDED
+        // happens in the recorder if the speaker route can't be engaged).
+        Timber.d("Tier resolve for call %s: stock cellular -> SPEAKER_TWO_WAY", call.id)
+        return RecordingTier.SPEAKER_TWO_WAY
     }
 
     /** RECORD_AUDIO is the precondition for ANY tier (even local-side). */

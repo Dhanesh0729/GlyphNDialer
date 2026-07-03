@@ -81,11 +81,11 @@ class RecorderTierResolverTest {
     }
 
     @Test
-    fun `baseline LOCAL_ONE_SIDED on stock device with permission`() {
+    fun `baseline SPEAKER_TWO_WAY on stock device with permission`() {
         grantRecordAudio(true)
         setDefaultDialer(false)
         setProbe(false)
-        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.LOCAL_ONE_SIDED)
+        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.SPEAKER_TWO_WAY)
     }
 
     @Test
@@ -101,7 +101,7 @@ class RecorderTierResolverTest {
         grantRecordAudio(true)
         setDefaultDialer(true)
         setProbe(false)
-        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.LOCAL_ONE_SIDED)
+        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.SPEAKER_TWO_WAY)
     }
 
     @Test
@@ -110,7 +110,7 @@ class RecorderTierResolverTest {
         setDefaultDialer(false)
         // probe is never consulted because default-dialer gate fails first; relax it.
         every { probe.canCaptureCallAudio() } returns true
-        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.LOCAL_ONE_SIDED)
+        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.SPEAKER_TWO_WAY)
     }
 
     // --- per-call decision table ------------------------------------------------------
@@ -133,11 +133,11 @@ class RecorderTierResolverTest {
     }
 
     @Test
-    fun `VoIP reaches two-way even when device baseline is local-only`() {
+    fun `VoIP reaches VOIP_TWO_WAY regardless of the device baseline`() {
         grantRecordAudio(true)
         setDefaultDialer(false)
         setProbe(false)
-        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.LOCAL_ONE_SIDED)
+        assertThat(resolver.resolveBaseline()).isEqualTo(RecordingTier.SPEAKER_TWO_WAY)
         assertThat(resolver.resolveForCall(voipCall())).isEqualTo(RecordingTier.VOIP_TWO_WAY)
     }
 
@@ -146,7 +146,7 @@ class RecorderTierResolverTest {
         grantRecordAudio(true)
         every { telecomManager.defaultDialerPackage } throws SecurityException("denied")
         every { probe.canCaptureCallAudio() } returns true
-        assertThat(resolver.resolveForCall(cellularCall())).isEqualTo(RecordingTier.LOCAL_ONE_SIDED)
+        assertThat(resolver.resolveForCall(cellularCall())).isEqualTo(RecordingTier.SPEAKER_TWO_WAY)
     }
 
     companion object {
@@ -160,9 +160,9 @@ class RecorderTierResolverTest {
             Arguments.of(true, true, false, false, RecordingTier.VOIP_TWO_WAY),
             Arguments.of(true, true, true, true, RecordingTier.VOIP_TWO_WAY),
             Arguments.of(true, false, true, true, RecordingTier.SYSTEM_TWO_WAY),
-            Arguments.of(true, false, true, false, RecordingTier.LOCAL_ONE_SIDED),
-            Arguments.of(true, false, false, true, RecordingTier.LOCAL_ONE_SIDED),
-            Arguments.of(true, false, false, false, RecordingTier.LOCAL_ONE_SIDED),
+            Arguments.of(true, false, true, false, RecordingTier.SPEAKER_TWO_WAY),
+            Arguments.of(true, false, false, true, RecordingTier.SPEAKER_TWO_WAY),
+            Arguments.of(true, false, false, false, RecordingTier.SPEAKER_TWO_WAY),
         )
     }
 }

@@ -99,6 +99,7 @@ fun RecordingCaptionStrip(
 internal fun recordingLabel(tier: RecordingTier): String = when (tier) {
     RecordingTier.SYSTEM_TWO_WAY -> "REC · TWO-WAY (SYSTEM)"
     RecordingTier.VOIP_TWO_WAY -> "REC · TWO-WAY (VOIP)"
+    RecordingTier.SPEAKER_TWO_WAY -> "REC · TWO-WAY (SPEAKER)"
     RecordingTier.LOCAL_ONE_SIDED -> "REC · MY SIDE ONLY"
     RecordingTier.UNAVAILABLE -> "REC · UNAVAILABLE"
 }

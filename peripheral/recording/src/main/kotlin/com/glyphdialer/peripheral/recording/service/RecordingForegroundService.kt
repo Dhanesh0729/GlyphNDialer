@@ -14,9 +14,17 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.glyphdialer.core.common.Constants
+import com.glyphdialer.core.common.getOrNull
 import com.glyphdialer.core.domain.glyph.GlyphController
 import com.glyphdialer.core.domain.model.RecordingTier
+import com.glyphdialer.core.domain.repository.SettingsRepository
+import com.glyphdialer.peripheral.recording.RecordingAnnouncer
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -38,6 +46,12 @@ import javax.inject.Inject
 class RecordingForegroundService : android.app.Service() {
 
     @Inject lateinit var glyphController: GlyphController
+
+    @Inject lateinit var settingsRepository: SettingsRepository
+
+    @Inject lateinit var announcer: RecordingAnnouncer
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
@@ -69,7 +83,26 @@ class RecordingForegroundService : android.app.Service() {
         runCatching { glyphController.showRecording(active = true) }
             .onFailure { Timber.w(it, "Glyph showRecording failed") }
 
+        // Audible "this call is being recorded" announcement unless the user opted out
+        // (§2.2). On SPEAKER_TWO_WAY the call is on the loudspeaker, so the other party
+        // hears it too. Capture is already running, so the announcement is part of the
+        // recording — an honest record that consent was given.
+        maybeAnnounce()
+
         Timber.d("RecordingForegroundService started (tier=%s)", tier)
+    }
+
+    /** Play the recording announcement unless the user disabled it (§2.2). */
+    private fun maybeAnnounce() {
+        serviceScope.launch {
+            val noAnnouncement = settingsRepository.current().getOrNull()?.recordingNoAnnouncement ?: false
+            if (noAnnouncement) {
+                Timber.d("Recording announcement suppressed by user preference (§2.2)")
+                return@launch
+            }
+            runCatching { announcer.announce() }
+                .onFailure { Timber.w(it, "Recording announcement failed") }
+        }
     }
 
     private fun handleStop() {
@@ -105,6 +138,7 @@ class RecordingForegroundService : android.app.Service() {
         val text = when (tier) {
             RecordingTier.SYSTEM_TWO_WAY -> "Recording (two-way)"
             RecordingTier.VOIP_TWO_WAY -> "Recording (two-way, in-app)"
+            RecordingTier.SPEAKER_TWO_WAY -> "Recording (two-way, speakerphone)"
             RecordingTier.LOCAL_ONE_SIDED -> "Recording (my side only)"
             RecordingTier.UNAVAILABLE -> "Recording unavailable"
         }
@@ -144,6 +178,7 @@ class RecordingForegroundService : android.app.Service() {
         // Ensure the Glyph indicator is cleared even on an abrupt kill (no-op when
         // Glyph is unavailable, §9).
         runCatching { glyphController.showRecording(active = false) }
+        serviceScope.cancel()
         super.onDestroy()
     }
 

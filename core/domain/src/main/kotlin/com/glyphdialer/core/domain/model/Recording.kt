@@ -13,19 +13,30 @@ package com.glyphdialer.core.domain.model
  */
 enum class RecordingTier(val quality: Int) {
     /** Best: default dialer on an OEM/system/rooted build that exposes call audio. */
-    SYSTEM_TWO_WAY(3),
+    SYSTEM_TWO_WAY(4),
 
     /** In-app WebRTC VoIP: we own both media tracks, full two-way quality. */
-    VOIP_TWO_WAY(2),
+    VOIP_TWO_WAY(3),
 
-    /** Stock-Android fallback: local mic only. Label "my side only" — NOT full call. */
+    /**
+     * Stock-Android two-way via the LOUDSPEAKER: the call is routed to speakerphone so
+     * the microphone captures BOTH sides acoustically (§2.1). This is genuine two-way
+     * capture, but at lower fidelity than SYSTEM/VOIP and it forces the call onto
+     * speaker — so the other party can hear the recording announcement too. The app
+     * only claims this tier when it can actually engage the speaker route; otherwise it
+     * degrades honestly to [LOCAL_ONE_SIDED].
+     */
+    SPEAKER_TWO_WAY(2),
+
+    /** Local mic only. Label "my side only" — NOT a full call (remote not captured). */
     LOCAL_ONE_SIDED(1),
 
     /** Recording is not possible on this device/call at all. */
     UNAVAILABLE(0);
 
     /** Whether this tier captures the remote party (honest two-way). */
-    val isTwoWay: Boolean get() = this == SYSTEM_TWO_WAY || this == VOIP_TWO_WAY
+    val isTwoWay: Boolean
+        get() = this == SYSTEM_TWO_WAY || this == VOIP_TWO_WAY || this == SPEAKER_TWO_WAY
 
     val isAvailable: Boolean get() = this != UNAVAILABLE
 }

@@ -65,6 +65,7 @@ internal object SettingsLabels {
     fun tier(tier: RecordingTier): String = when (tier) {
         RecordingTier.SYSTEM_TWO_WAY -> "Two-way (system)"
         RecordingTier.VOIP_TWO_WAY -> "Two-way (VoIP)"
+        RecordingTier.SPEAKER_TWO_WAY -> "Two-way (speakerphone)"
         RecordingTier.LOCAL_ONE_SIDED -> "My side only"
         RecordingTier.UNAVAILABLE -> "Unavailable"
     }
@@ -75,6 +76,10 @@ internal object SettingsLabels {
             "Your device exposes call audio, so both sides can be recorded."
         RecordingTier.VOIP_TWO_WAY ->
             "In-app VoIP calls own both audio tracks, so both sides can be recorded."
+        RecordingTier.SPEAKER_TWO_WAY ->
+            "The call is routed to the loudspeaker while recording, so the microphone " +
+                "captures both sides. Quality is lower than system/VoIP capture, and the " +
+                "other party can hear the recording announcement over the speaker."
         RecordingTier.LOCAL_ONE_SIDED ->
             "On stock Android only your microphone can be captured — the other party " +
                 "is not recorded. Recordings are clearly labelled \"my side only\"."
