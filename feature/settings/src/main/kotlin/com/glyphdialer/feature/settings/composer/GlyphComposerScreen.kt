@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.feature.settings.composer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,6 +59,7 @@ import com.glyphdialer.core.designsystem.theme.NumberStyle
 import com.glyphdialer.core.domain.model.CustomGlyphFrame
 import com.glyphdialer.core.domain.model.CustomGlyphZone
 import com.glyphdialer.core.domain.model.GlyphFrameSound
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
 import com.glyphdialer.core.domain.model.GlyphSoundStyle
 import com.glyphdialer.core.ui.component.DottedDivider
 import com.glyphdialer.core.ui.component.EngineeredCard
@@ -209,6 +208,7 @@ fun GlyphComposerScreen(
                     FrameRow(
                         index = index,
                         frame = frame,
+                        hardwareProfile = uiState.hardwareProfile,
                         isFirst = index == 0,
                         isLast = index == uiState.frames.lastIndex,
                         onMoveUp = { onMoveFrame(index, -1) },
@@ -243,22 +243,23 @@ private fun ComposerOverview(uiState: GlyphComposerUiState) {
                 horizontalArrangement = Arrangement.spacedBy(Dimens.spaceLg),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ZonePreview(
-                    zones = uiState.selectedZones,
-                    intensity = uiState.intensity,
+                GlyphHardwarePreview(
+                    profile = uiState.hardwareProfile,
+                    zones = uiState.activePreviewZones,
+                    intensity = uiState.activePreviewIntensity,
                     modifier = Modifier.weight(0.9f),
                 )
                 Column(modifier = Modifier.weight(1.1f)) {
                     Text(
-                        text = if (uiState.glyphAvailable) "HARDWARE PREVIEW" else "SCREEN PREVIEW",
+                        text = uiState.hardwareProfile.displayName.uppercase(),
                         style = MaterialTheme.typography.labelMedium.merge(NumberStyle),
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         text = if (uiState.glyphAvailable) {
-                            "Zones adapt to the detected Nothing phone layout."
+                            "Screen and hardware preview use the detected Glyph layout."
                         } else {
-                            "Saved patterns still work; Glyph lights remain hidden here."
+                            "Screen preview stays editable until Glyph hardware is available."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -273,7 +274,11 @@ private fun ComposerOverview(uiState: GlyphComposerUiState) {
             }
             DottedDivider()
             Text(
-                text = "Keep patterns short and recognizable. Incoming calls loop this sequence until answered or dismissed.",
+                text = if (uiState.isPreviewing) {
+                    "Preview is playing on screen with matching haptic and sound cues."
+                } else {
+                    "Keep patterns short and recognizable. Incoming calls loop this sequence until answered or dismissed."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -304,6 +309,15 @@ private fun FrameBuilder(
                         onClick = { onToggleZone(zone) },
                     )
                 }
+            }
+            val unsupportedZones = CustomGlyphZone.entries
+                .filterNot { it == CustomGlyphZone.ALL || uiState.hardwareProfile.supports(it) }
+            if (unsupportedZones.isNotEmpty()) {
+                Text(
+                    text = "Unavailable zones remap to the nearest LEDs on ${uiState.hardwareProfile.displayName}.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             SliderRow(
@@ -394,6 +408,7 @@ private fun TimelineHeader(
 private fun FrameRow(
     index: Int,
     frame: CustomGlyphFrame,
+    hardwareProfile: GlyphHardwareProfile,
     isFirst: Boolean,
     isLast: Boolean,
     onMoveUp: () -> Unit,
@@ -407,10 +422,11 @@ private fun FrameRow(
             horizontalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ZonePreview(
+            GlyphHardwarePreview(
+                profile = hardwareProfile,
                 zones = frame.zones.toSet(),
                 intensity = frame.safeIntensity,
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(width = 68.dp, height = 100.dp),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -438,46 +454,6 @@ private fun FrameRow(
                 }
                 IconButton(onClick = onRemove) {
                     Icon(Icons.Filled.Delete, contentDescription = "Delete frame")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ZonePreview(
-    zones: Set<CustomGlyphZone>,
-    intensity: Float,
-    modifier: Modifier = Modifier,
-) {
-    val active = MaterialTheme.colorScheme.primary.copy(alpha = intensity.coerceIn(0.2f, 1f))
-    val inactive = MaterialTheme.colorScheme.surfaceVariant
-    Column(
-        modifier = modifier.aspectRatio(1f),
-        verticalArrangement = Arrangement.spacedBy(Dimens.spaceXs),
-    ) {
-        repeat(3) { row ->
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceXs),
-            ) {
-                repeat(3) { col ->
-                    val zone = previewZone(row, col)
-                    val selected = CustomGlyphZone.ALL in zones || (zone != null && zone in zones)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxSize()
-                            .background(
-                                color = if (selected) active else inactive,
-                                shape = RoundedCornerShape(Dimens.spaceXs),
-                            )
-                            .border(
-                                width = Dimens.hairline,
-                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                shape = RoundedCornerShape(Dimens.spaceXs),
-                            ),
-                    )
                 }
             }
         }
@@ -590,17 +566,6 @@ private fun Label(text: String) {
         style = MaterialTheme.typography.labelMedium.merge(NumberStyle),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-private fun previewZone(row: Int, col: Int): CustomGlyphZone? = when (row to col) {
-    0 to 0 -> CustomGlyphZone.TOP_LEFT
-    0 to 1 -> CustomGlyphZone.CAMERA_RING
-    0 to 2 -> CustomGlyphZone.TOP_RIGHT
-    1 to 1 -> CustomGlyphZone.CENTER
-    2 to 0 -> CustomGlyphZone.BOTTOM_LEFT
-    2 to 1 -> CustomGlyphZone.BOTTOM_CENTER
-    2 to 2 -> CustomGlyphZone.BOTTOM_RIGHT
-    else -> null
 }
 
 private fun CustomGlyphZone.label(): String = when (this) {

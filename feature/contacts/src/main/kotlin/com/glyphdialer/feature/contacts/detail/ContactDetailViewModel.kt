@@ -65,9 +65,7 @@ class ContactDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val lookupKey: String =
-        checkNotNull(savedStateHandle[ContactsRoutes.ARG_LOOKUP_KEY]) {
-            "ContactDetail requires a ${ContactsRoutes.ARG_LOOKUP_KEY} argument"
-        }
+        Uri.decode(savedStateHandle.get<String>(ContactsRoutes.ARG_LOOKUP_KEY).orEmpty()).orEmpty()
 
     private val _uiState = MutableStateFlow(ContactDetailUiState())
     val uiState: StateFlow<ContactDetailUiState> = _uiState.asStateFlow()
@@ -76,10 +74,20 @@ class ContactDetailViewModel @Inject constructor(
     val effects = _effects.receiveAsFlow()
 
     init {
-        observeContact()
-        observeRecentInteractions()
-        observeSpeedDial()
-        observeVideoAvailability()
+        if (lookupKey.isBlank()) {
+            Timber.w("Contact detail opened without a lookup key")
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = "Couldn't open this contact.",
+                )
+            }
+        } else {
+            observeContact()
+            observeRecentInteractions()
+            observeSpeedDial()
+            observeVideoAvailability()
+        }
     }
 
     fun onEvent(event: ContactDetailEvent) {

@@ -15,6 +15,7 @@ import com.glyphdialer.core.domain.model.CustomGlyphFrame
 import com.glyphdialer.core.domain.model.CustomGlyphPattern
 import com.glyphdialer.core.domain.model.CustomGlyphZone
 import com.glyphdialer.core.domain.model.GlyphFrameSound
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
 import com.glyphdialer.core.domain.model.GlyphSoundStyle
 import com.glyphdialer.core.domain.repository.CapabilityRepository
 import com.glyphdialer.core.domain.repository.CustomGlyphPatternRepository
@@ -43,11 +44,19 @@ data class GlyphComposerUiState(
     val frameSound: GlyphFrameSound = GlyphFrameSound.FOLLOW_PATTERN,
     val repeatCount: Int = 1,
     val glyphAvailable: Boolean = false,
+    val hardwareProfile: GlyphHardwareProfile = GlyphHardwareProfile.none,
+    val previewFrame: CustomGlyphFrame? = null,
     val isSaving: Boolean = false,
     val isPreviewing: Boolean = false,
     val message: String? = null,
 ) {
     val totalDurationMs: Int get() = frames.sumOf { it.safeDurationMs } * repeatCount.coerceAtLeast(1)
+
+    val activePreviewZones: Set<CustomGlyphZone>
+        get() = previewFrame?.zones?.toSet() ?: selectedZones
+
+    val activePreviewIntensity: Float
+        get() = previewFrame?.safeIntensity ?: intensity
 
     val canSave: Boolean get() = frames.isNotEmpty() && patternName.isNotBlank() && !isSaving
 
@@ -70,7 +79,12 @@ class GlyphComposerViewModel @Inject constructor(
     init {
         capabilityRepository.capabilities
             .onEach { capabilities ->
-                _uiState.update { it.copy(glyphAvailable = capabilities.glyphAvailable) }
+                _uiState.update {
+                    it.copy(
+                        glyphAvailable = capabilities.glyphAvailable,
+                        hardwareProfile = glyphController.hardwareProfile,
+                    )
+                }
             }
             .catch { t -> Timber.w(t, "Failed observing Glyph composer capabilities") }
             .launchIn(viewModelScope)
@@ -175,7 +189,7 @@ class GlyphComposerViewModel @Inject constructor(
             try {
                 playLocalFeedback(pattern)
             } finally {
-                _uiState.update { it.copy(isPreviewing = false) }
+                _uiState.update { it.copy(isPreviewing = false, previewFrame = null) }
             }
         }
     }
@@ -217,16 +231,17 @@ class GlyphComposerViewModel @Inject constructor(
     }
 
     private suspend fun playLocalFeedback(pattern: CustomGlyphPattern) {
-        if (pattern.soundStyle == GlyphSoundStyle.SILENT) {
-            delay(pattern.durationMs.toLong())
-            return
+        val tone = if (pattern.soundStyle == GlyphSoundStyle.SILENT) {
+            null
+        } else {
+            runCatching {
+                ToneGenerator(AudioManager.STREAM_NOTIFICATION, previewVolume(pattern.soundStyle))
+            }.getOrNull()
         }
-        val tone = runCatching {
-            ToneGenerator(AudioManager.STREAM_NOTIFICATION, previewVolume(pattern.soundStyle))
-        }.getOrNull()
         try {
             repeat(pattern.repeatCount.coerceIn(1, 8)) {
                 for (frame in pattern.frames) {
+                    _uiState.update { it.copy(previewFrame = frame) }
                     playFrameCue(tone, pattern.soundStyle, frame)
                     vibrate(frame, pattern.soundStyle)
                     delay(frame.safeDurationMs.toLong())

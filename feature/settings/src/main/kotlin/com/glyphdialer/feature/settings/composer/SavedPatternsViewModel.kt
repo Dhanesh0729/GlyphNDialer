@@ -19,6 +19,8 @@ class SavedPatternsViewModel @Inject constructor(
     private val glyphController: GlyphController,
 ) : ViewModel() {
 
+    val hardwareProfile = glyphController.hardwareProfile
+
     val patterns: StateFlow<List<CustomGlyphPattern>> = repository.observeAllPatterns()
         .stateIn(
             scope = viewModelScope,

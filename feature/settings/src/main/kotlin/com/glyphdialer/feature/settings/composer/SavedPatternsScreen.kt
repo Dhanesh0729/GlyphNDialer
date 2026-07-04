@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -37,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.glyphdialer.core.designsystem.theme.Dimens
 import com.glyphdialer.core.designsystem.theme.NumberStyle
 import com.glyphdialer.core.domain.model.CustomGlyphPattern
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
 import com.glyphdialer.core.ui.component.EngineeredCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +51,7 @@ fun SavedPatternsRoute(
     viewModel: SavedPatternsViewModel = hiltViewModel(),
 ) {
     val patterns by viewModel.patterns.collectAsStateWithLifecycle()
+    val hardwareProfile = viewModel.hardwareProfile
 
     Scaffold(
         topBar = {
@@ -111,6 +115,7 @@ fun SavedPatternsRoute(
                 items(patterns, key = { it.id }) { pattern ->
                     PatternItem(
                         pattern = pattern,
+                        hardwareProfile = hardwareProfile,
                         onPreview = { viewModel.preview(pattern) },
                         onAssign = { onNavigateToAssign(pattern.id) },
                         onDelete = { viewModel.delete(pattern.id) },
@@ -124,23 +129,41 @@ fun SavedPatternsRoute(
 @Composable
 private fun PatternItem(
     pattern: CustomGlyphPattern,
+    hardwareProfile: GlyphHardwareProfile,
     onPreview: () -> Unit,
     onAssign: () -> Unit,
     onDelete: () -> Unit,
 ) {
     EngineeredCard(indexLabel = pattern.frames.size.toString().padStart(2, '0')) {
         Column(verticalArrangement = Arrangement.spacedBy(Dimens.spaceMd)) {
-            Column {
-                Text(
-                    text = pattern.name.ifBlank { "Unnamed pattern" },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceMd),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlyphHardwarePreview(
+                    profile = hardwareProfile,
+                    zones = pattern.frames.firstOrNull()?.zones.orEmpty().toSet(),
+                    intensity = pattern.frames.firstOrNull()?.safeIntensity ?: 0.6f,
+                    modifier = Modifier.width(58.dp).height(86.dp),
                 )
-                Text(
-                    text = "${pattern.frames.size} frames / ${pattern.durationMs} ms / ${pattern.soundStyle.name}",
-                    style = MaterialTheme.typography.bodySmall.merge(NumberStyle),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = pattern.name.ifBlank { "Unnamed pattern" },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = "${pattern.frames.size} frames / ${pattern.durationMs} ms / ${pattern.soundStyle.name}",
+                        style = MaterialTheme.typography.bodySmall.merge(NumberStyle),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = hardwareProfile.displayName,
+                        style = MaterialTheme.typography.labelSmall.merge(NumberStyle),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

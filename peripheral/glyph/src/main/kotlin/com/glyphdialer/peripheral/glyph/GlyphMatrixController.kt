@@ -4,6 +4,7 @@ package com.glyphdialer.peripheral.glyph
 import android.content.Context
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.glyph.GlyphController
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
 import com.glyphdialer.peripheral.glyph.choreography.GlyphChoreographer
 import com.glyphdialer.peripheral.glyph.choreography.GlyphDeviceProfile
 import com.glyphdialer.peripheral.glyph.choreography.GlyphZone
@@ -60,6 +61,8 @@ class GlyphMatrixController(
 
     override val isAvailable: Boolean
         get() = ready.get()
+
+    override val hardwareProfile: GlyphHardwareProfile = GlyphHardwareProfile.matrixPhone3
 
     override fun playDigitStroke(digit: Char) {
         if (!isAvailable) return

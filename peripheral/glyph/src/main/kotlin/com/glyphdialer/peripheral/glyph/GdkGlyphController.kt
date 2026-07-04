@@ -4,6 +4,7 @@ package com.glyphdialer.peripheral.glyph
 import android.content.Context
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.glyph.GlyphController
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
 import com.glyphdialer.peripheral.glyph.choreography.GlyphChoreographer
 import com.glyphdialer.peripheral.glyph.choreography.GlyphDeviceProfile
 import com.glyphdialer.peripheral.glyph.choreography.GlyphZone
@@ -49,7 +50,8 @@ class GdkGlyphController(
 
     /** Zone → GDK channel-int mapping; resolved when the service connects. */
     private var zoneChannels: Map<GlyphZone, List<Int>> = emptyMap()
-    private var deviceProfile: GlyphDeviceProfile = GlyphDeviceProfile.genericLightStrip
+    private var deviceProfile: GlyphDeviceProfile = GlyphDeviceProfile.lightStrip(detectNumericModelFromBuild())
+    private var hardwareProfileState: GlyphHardwareProfile = GlyphHardwareProfile.lightStrip(detectNumericModelFromBuild())
 
     private val choreographer = GlyphChoreographer(
         dispatcher = dispatcher,
@@ -66,6 +68,9 @@ class GdkGlyphController(
 
     override val isAvailable: Boolean
         get() = ready.get() && registered.get()
+
+    override val hardwareProfile: GlyphHardwareProfile
+        get() = hardwareProfileState
 
     override fun playDigitStroke(digit: Char) {
         if (!isAvailable) return
@@ -170,6 +175,7 @@ class GdkGlyphController(
             ready.set(true)
             Timber.tag(TAG).i("GDK session open for device constant=%s, numeric=%d", deviceConst, numeric)
             deviceProfile = GlyphDeviceProfile.lightStrip(numeric)
+            hardwareProfileState = GlyphHardwareProfile.lightStrip(numeric)
             buildZoneChannelMap(numeric.toString())
         } catch (t: Throwable) {
             Timber.tag(TAG).w(t, "GDK register/openSession failed")
@@ -195,7 +201,11 @@ class GdkGlyphController(
             }
         }
         
-        // Robust fallback based on Build.MODEL / Build.DEVICE
+        return detectNumericModelFromBuild()
+    }
+
+    // Robust fallback based on Build.MODEL / Build.DEVICE.
+    private fun detectNumericModelFromBuild(): Int {
         val model = android.os.Build.MODEL.orEmpty().lowercase()
         val device = android.os.Build.DEVICE.orEmpty().lowercase()
         return when {

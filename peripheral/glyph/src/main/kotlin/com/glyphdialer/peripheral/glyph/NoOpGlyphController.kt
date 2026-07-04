@@ -3,6 +3,7 @@ package com.glyphdialer.peripheral.glyph
 
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.glyph.GlyphController
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
 import timber.log.Timber
 
 /**
@@ -20,6 +21,8 @@ class NoOpGlyphController(
 ) : GlyphController {
 
     override val isAvailable: Boolean = false
+
+    override val hardwareProfile: GlyphHardwareProfile = GlyphHardwareProfile.none
 
     override fun playDigitStroke(digit: Char) = noOp("playDigitStroke('$digit')")
 

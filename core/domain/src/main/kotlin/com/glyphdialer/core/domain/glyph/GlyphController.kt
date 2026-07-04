@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.core.domain.glyph
 
+import com.glyphdialer.core.domain.model.GlyphHardwareProfile
+
 /**
  * Abstraction over the Nothing Glyph Interface (§17).
  *
@@ -20,6 +22,12 @@ interface GlyphController {
      * Must be safe to read on any device.
      */
     val isAvailable: Boolean
+
+    /**
+     * SDK-free hardware layout used by the UI for the on-screen Glyph preview.
+     * Non-Nothing devices return a generic preview so custom patterns are still editable.
+     */
+    val hardwareProfile: GlyphHardwareProfile
 
     /** Fire the distinct per-key light stroke for a dialpad [digit] (§17.4). */
     fun playDigitStroke(digit: Char)
