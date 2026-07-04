@@ -28,7 +28,6 @@ import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.feature.settings.component.GlyphGroup
 import com.glyphdialer.feature.settings.component.LockedGlyphGroup
 import com.glyphdialer.feature.settings.component.PremiumAppearanceGroup
-import com.glyphdialer.feature.settings.component.PremiumGlyphGroup
 
 @Composable
 fun ProSettingsRoute(

@@ -2,6 +2,8 @@
 package com.glyphdialer.core.data.db
 
 import androidx.room.TypeConverter
+import com.glyphdialer.core.domain.model.GlyphFrameSound
+import com.glyphdialer.core.domain.model.GlyphSoundStyle
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.TranscriptionEngineType
 
@@ -26,6 +28,20 @@ class Converters {
     fun stringToEngine(value: String): TranscriptionEngineType =
         runCatching { TranscriptionEngineType.valueOf(value) }
             .getOrDefault(TranscriptionEngineType.ON_DEVICE_WHISPER)
+
+    @TypeConverter
+    fun glyphSoundStyleToString(style: GlyphSoundStyle): String = style.name
+
+    @TypeConverter
+    fun stringToGlyphSoundStyle(value: String): GlyphSoundStyle =
+        runCatching { GlyphSoundStyle.valueOf(value) }.getOrDefault(GlyphSoundStyle.SOFT_TICK)
+
+    @TypeConverter
+    fun glyphFrameSoundToString(sound: GlyphFrameSound): String = sound.name
+
+    @TypeConverter
+    fun stringToGlyphFrameSound(value: String): GlyphFrameSound =
+        runCatching { GlyphFrameSound.valueOf(value) }.getOrDefault(GlyphFrameSound.FOLLOW_PATTERN)
 
     @TypeConverter
     fun zonesToString(zones: List<com.glyphdialer.core.domain.model.CustomGlyphZone>): String =

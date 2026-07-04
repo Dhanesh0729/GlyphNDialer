@@ -5,6 +5,7 @@ import com.glyphdialer.core.common.Constants
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.model.CustomGlyphPattern
 import com.glyphdialer.core.domain.model.CustomGlyphZone
+import com.glyphdialer.core.domain.model.GlyphPattern
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -100,7 +101,7 @@ class GlyphChoreographer(
      * of the number, §17.5) so each caller is recognizable. Followed by a torch flash on
      * connect cue. Runs on the ambient channel and loops until replaced/cleared.
      */
-    fun playIncomingShow(contactSeed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern) {
+    fun playIncomingShow(contactSeed: Int, pattern: GlyphPattern) {
         startAmbient {
             val show = seededShow(contactSeed, pattern)
             renderer.flashTorch()
@@ -112,7 +113,7 @@ class GlyphChoreographer(
         }
     }
 
-    fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
+    fun playIncomingShow(contactSeed: Int, customPattern: CustomGlyphPattern) {
         playCustomPattern(customPattern)
     }
 
@@ -128,6 +129,17 @@ class GlyphChoreographer(
                 runStroke(stroke)
                 delay(120)
             }
+        }
+    }
+
+    /** Play a user-defined custom pattern once for the composer preview surface. */
+    fun previewCustomPattern(pattern: CustomGlyphPattern) {
+        if (!pattern.isPlayable) return
+        startAmbient(loop = false) {
+            repeat(pattern.repeatCount.coerceIn(1, 8)) {
+                runStroke(customPatternToStroke(pattern))
+            }
+            renderer.clear()
         }
     }
 
@@ -271,7 +283,7 @@ class GlyphChoreographer(
             delay(third)
             coroutineContext.ensureActive()
             renderer.paint(frame.zones, frame.toIntensity * intensity)
-            delay(frame.durationMs - 2 * third)
+            delay((frame.durationMs.toLong() - 2L * third).coerceAtLeast(1L))
         }
     }
 
@@ -280,7 +292,7 @@ class GlyphChoreographer(
      * to pick a zone permutation, beat count, and intensities — same number → same show.
      * Pure function of the seed (no SDK), so it can be unit-tested.
      */
-    internal fun seededShow(seed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern): GlyphStroke {
+    internal fun seededShow(seed: Int, pattern: GlyphPattern): GlyphStroke {
         val zones = GlyphZone.entries.filter { it != GlyphZone.ALL }
         val n = zones.size
         // A small LCG over the seed for reproducible pseudo-randomness.
@@ -292,14 +304,14 @@ class GlyphChoreographer(
         val beats = 3 + next() % 4 // 3..6 beats
         val frames = buildList {
             when (pattern) {
-                com.glyphdialer.core.domain.model.GlyphPattern.WAVE -> {
+                GlyphPattern.WAVE -> {
                     // Sweeping wave
                     zones.forEach { z ->
                         add(GlyphFrame(listOf(z), 0.1f, 1f, 150))
                         add(GlyphFrame(listOf(z), 1f, 0.1f, 150))
                     }
                 }
-                com.glyphdialer.core.domain.model.GlyphPattern.NOTIFICATION -> {
+                GlyphPattern.NOTIFICATION -> {
                     // Fast blinks
                     repeat(2) {
                         add(GlyphFrame(listOf(GlyphZone.CAMERA_RING), 0.1f, 1f, 50))
@@ -307,13 +319,13 @@ class GlyphChoreographer(
                         add(GlyphFrame(emptyList(), 0f, 0f, 100))
                     }
                 }
-                com.glyphdialer.core.domain.model.GlyphPattern.SLOW_FADE -> {
+                GlyphPattern.SLOW_FADE -> {
                     // Slow fade in and out
                     val zone = zones[next() % n]
                     add(GlyphFrame(listOf(zone), 0.1f, 1f, 800))
                     add(GlyphFrame(listOf(zone), 1f, 0.1f, 800))
                 }
-                com.glyphdialer.core.domain.model.GlyphPattern.CYBER -> {
+                GlyphPattern.CYBER -> {
                     // Erratic flashes
                     repeat(beats * 2) {
                         val zone = zones[next() % n]
@@ -322,7 +334,7 @@ class GlyphChoreographer(
                         add(GlyphFrame(listOf(zone), intensity, 0.2f, 40))
                     }
                 }
-                com.glyphdialer.core.domain.model.GlyphPattern.RETRO -> {
+                GlyphPattern.RETRO -> {
                     // Old school ringing
                     repeat(3) {
                         add(GlyphFrame(zones, 0f, 0.8f, 100))
@@ -330,7 +342,7 @@ class GlyphChoreographer(
                         add(GlyphFrame(emptyList(), 0f, 0f, 200))
                     }
                 }
-                com.glyphdialer.core.domain.model.GlyphPattern.CLASSIC, com.glyphdialer.core.domain.model.GlyphPattern.PULSE -> {
+                GlyphPattern.CLASSIC, GlyphPattern.PULSE -> {
                     // Original seeded behavior
                     repeat(beats) {
                         val zone = zones[next() % n]
@@ -346,13 +358,33 @@ class GlyphChoreographer(
 
     private fun customPatternToStroke(pattern: CustomGlyphPattern): GlyphStroke {
         val frames = pattern.frames.map { customFrame ->
-            val zones = customFrame.zones.mapNotNull {
-                runCatching { GlyphZone.valueOf(it.name) }.getOrNull()
-            }
+            val zones = customFrame.zones.toGlyphZones()
             // A custom frame assumes instant on to the target intensity, holding for duration
-            GlyphFrame(zones, customFrame.intensity, customFrame.intensity, customFrame.durationMs)
+            GlyphFrame(
+                zones = zones,
+                fromIntensity = customFrame.safeIntensity,
+                toIntensity = customFrame.safeIntensity,
+                durationMs = customFrame.safeDurationMs,
+            )
         }
         return GlyphStroke('@', "custom#${pattern.id}", frames)
+    }
+
+    private fun List<CustomGlyphZone>.toGlyphZones(): List<GlyphZone> {
+        if (isEmpty()) return emptyList()
+        if (any { it == CustomGlyphZone.ALL }) return listOf(GlyphZone.ALL)
+        return mapNotNull { zone ->
+            when (zone) {
+                CustomGlyphZone.TOP_LEFT -> GlyphZone.TOP_LEFT
+                CustomGlyphZone.TOP_RIGHT -> GlyphZone.TOP_RIGHT
+                CustomGlyphZone.CAMERA_RING -> GlyphZone.CAMERA_RING
+                CustomGlyphZone.CENTER -> GlyphZone.CENTER
+                CustomGlyphZone.BOTTOM_LEFT -> GlyphZone.BOTTOM_LEFT
+                CustomGlyphZone.BOTTOM_CENTER -> GlyphZone.BOTTOM_CENTER
+                CustomGlyphZone.BOTTOM_RIGHT -> GlyphZone.BOTTOM_RIGHT
+                CustomGlyphZone.ALL -> GlyphZone.ALL
+            }
+        }.distinct()
     }
 
     /** How many zones pulse in a conference, scaling with [partyCount]. */

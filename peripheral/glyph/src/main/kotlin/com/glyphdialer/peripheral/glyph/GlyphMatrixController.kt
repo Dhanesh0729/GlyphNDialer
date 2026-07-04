@@ -5,6 +5,7 @@ import android.content.Context
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.glyph.GlyphController
 import com.glyphdialer.peripheral.glyph.choreography.GlyphChoreographer
+import com.glyphdialer.peripheral.glyph.choreography.GlyphDeviceProfile
 import com.glyphdialer.peripheral.glyph.choreography.GlyphZone
 import kotlinx.coroutines.CoroutineDispatcher
 import timber.log.Timber
@@ -42,6 +43,7 @@ class GlyphMatrixController(
 
     /** The character most recently dispatched, drawn as a glyph on the matrix. */
     @Volatile private var lastDigit: Char? = null
+    private val deviceProfile = GlyphDeviceProfile.matrixPhone3
 
     private val choreographer = GlyphChoreographer(
         dispatcher = dispatcher,
@@ -75,6 +77,11 @@ class GlyphMatrixController(
     override fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
         if (!isAvailable) return
         choreographer.playIncomingShow(contactSeed, customPattern)
+    }
+
+    override fun previewCustomPattern(customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
+        if (!isAvailable) return
+        choreographer.previewCustomPattern(customPattern)
     }
 
     override fun showRecording(active: Boolean) {
@@ -158,7 +165,7 @@ class GlyphMatrixController(
     private inner class MatrixRenderer : GlyphChoreographer.GlyphRenderer {
         override fun paint(zones: List<GlyphZone>, intensity: Float) {
             // Translate zones to a region mask on the matrix and push as an object frame.
-            val frame = buildRegionFrame(zones, intensity) ?: return
+            val frame = buildRegionFrame(deviceProfile.adapt(zones), intensity) ?: return
             pushFrame(frame)
         }
 

@@ -45,7 +45,7 @@ import com.glyphdialer.core.data.db.dao.ContactGlyphPatternDao
         CustomGlyphFrameEntity::class,
         ContactGlyphPatternEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

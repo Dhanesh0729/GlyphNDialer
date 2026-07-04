@@ -5,12 +5,16 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.glyphdialer.core.domain.model.CustomGlyphPattern
 import com.glyphdialer.core.domain.model.CustomGlyphFrame
+import com.glyphdialer.core.domain.model.GlyphFrameSound
+import com.glyphdialer.core.domain.model.GlyphSoundStyle
 import com.glyphdialer.core.domain.model.CustomGlyphZone
 
 @Entity(tableName = "custom_glyph_pattern")
 data class CustomGlyphPatternEntity(
     @PrimaryKey val id: String,
     val name: String,
+    val soundStyle: GlyphSoundStyle,
+    val repeatCount: Int,
 )
 
 @Entity(tableName = "custom_glyph_frame")
@@ -21,6 +25,7 @@ data class CustomGlyphFrameEntity(
     val intensity: Float,
     val durationMs: Int,
     val zones: List<CustomGlyphZone>,
+    val soundCue: GlyphFrameSound,
 )
 
 data class CustomGlyphPatternWithFrames(
@@ -38,8 +43,11 @@ data class CustomGlyphPatternWithFrames(
             CustomGlyphFrame(
                 zones = it.zones,
                 intensity = it.intensity,
-                durationMs = it.durationMs
+                durationMs = it.durationMs,
+                soundCue = it.soundCue,
             )
-        }
+        },
+        soundStyle = pattern.soundStyle,
+        repeatCount = pattern.repeatCount,
     )
 }

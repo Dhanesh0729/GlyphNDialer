@@ -90,9 +90,10 @@ fun SettingsSectionHeader(
 fun SettingsFolder(
     title: String,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    initiallyExpanded: Boolean = true,
+    content: @Composable () -> Unit,
 ) {
-    var expanded by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(initiallyExpanded) }
     Column(modifier = modifier.fillMaxWidth()) {
         SettingsSectionHeader(
             title = title,

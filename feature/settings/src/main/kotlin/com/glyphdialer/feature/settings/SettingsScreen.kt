@@ -196,6 +196,21 @@ fun SettingsScreen(
                     }
                     item(key = "appearance") { AppearanceGroup(uiState, onEvent) }
                     item(key = "plan") { PlanGroup(uiState) }
+                    when {
+                        uiState.showGlyphGroup -> item(key = "glyph") { GlyphGroup(uiState, onEvent) }
+                        uiState.showLockedGlyphGroup -> item(key = "glyph_locked") { LockedGlyphGroup() }
+                    }
+                    if (uiState.preferences.appPlan == AppPlan.PRO) {
+                        item(key = "composer") {
+                            SettingsFolder(title = "Glyph Composer", modifier = Modifier) {
+                                SettingsNavigationRow(
+                                    title = "Custom presets",
+                                    subtitle = "Create, preview, assign, and delete caller light patterns",
+                                    onClick = { onEvent(SettingsEvent.OpenGlyphComposer) },
+                                )
+                            }
+                        }
+                    }
 
                     item(key = "calls") { CallsGroup(uiState, onEvent) }
                     item(key = "recording") { RecordingGroup(uiState, onEvent) }

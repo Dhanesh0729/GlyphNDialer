@@ -71,7 +71,7 @@ fun NavGraphBuilder.settingsGraph(
             onOpenAbout = { navController.navigate(SettingsRoutes.ABOUT) },
             onOpenSpeedDial = onOpenSpeedDial,
             onOpenOpenSourceLicenses = openLicenses,
-            onOpenGlyphComposer = { navController.navigate(SettingsRoutes.COMPOSER) },
+            onOpenGlyphComposer = { navController.navigate(SettingsRoutes.SAVED_PATTERNS) },
         )
     }
 

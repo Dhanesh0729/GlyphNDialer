@@ -36,6 +36,9 @@ interface GlyphController {
      */
     fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern)
 
+    /** Play a saved custom pattern once for the composer preview screen. */
+    fun previewCustomPattern(customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern)
+
     /** Show/clear the persistent recording indicator pattern (§17.5). */
     fun showRecording(active: Boolean)
 

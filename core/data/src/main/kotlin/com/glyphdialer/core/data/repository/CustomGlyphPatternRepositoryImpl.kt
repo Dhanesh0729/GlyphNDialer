@@ -30,26 +30,41 @@ class CustomGlyphPatternRepositoryImpl @Inject constructor(
     override suspend fun savePattern(pattern: CustomGlyphPattern) {
         val patternEntity = CustomGlyphPatternEntity(
             id = pattern.id,
-            name = pattern.name
+            name = pattern.name,
+            soundStyle = pattern.soundStyle,
+            repeatCount = pattern.repeatCount.coerceIn(1, 8),
         )
         val frameEntities = pattern.frames.mapIndexed { index, frame ->
             CustomGlyphFrameEntity(
                 patternId = pattern.id,
                 indexInSequence = index,
-                intensity = frame.intensity,
-                durationMs = frame.durationMs,
-                zones = frame.zones
+                intensity = frame.safeIntensity,
+                durationMs = frame.safeDurationMs,
+                zones = frame.zones,
+                soundCue = frame.soundCue,
             )
         }
         patternDao.savePattern(patternEntity, frameEntities)
     }
 
     override suspend fun deletePattern(id: String) {
+        contactPatternDao.clearAssignmentsForPattern(id)
         patternDao.deletePattern(id)
     }
     
     override suspend fun assignPatternToContact(patternId: String, lookupKey: String) {
         contactPatternDao.assignPattern(ContactGlyphPatternEntity(contactLookupKey = lookupKey, patternId = patternId))
+    }
+
+    override suspend fun replaceAssignments(patternId: String, lookupKeys: Set<String>) {
+        contactPatternDao.clearAssignmentsForPattern(patternId)
+        lookupKeys.forEach { lookupKey ->
+            assignPatternToContact(patternId, lookupKey)
+        }
+    }
+
+    override suspend fun getContactKeysForPattern(patternId: String): Set<String> {
+        return contactPatternDao.getContactKeysForPattern(patternId).toSet()
     }
 
     override suspend fun getPatternForContact(lookupKey: String): CustomGlyphPattern? {

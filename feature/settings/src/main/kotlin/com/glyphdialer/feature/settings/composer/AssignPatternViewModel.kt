@@ -41,12 +41,18 @@ class AssignPatternViewModel @Inject constructor(
     private fun loadContactsAndAssignments() {
         viewModelScope.launch {
             val contactsList = contactsRepository.observeContacts().first()
-            
-            // To simplify for now, we just load all contacts.
-            // Ideally we should pre-select the contacts that already have this patternId.
-            // Since our DAO doesn't have a getContactsForPattern method yet, we'll start with empty selection.
-            
-            _uiState.update { it.copy(isLoading = false, contacts = contactsList) }
+            val selectedKeys = if (patternId.isNotBlank()) {
+                glyphRepository.getContactKeysForPattern(patternId)
+            } else {
+                emptySet()
+            }
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    contacts = contactsList,
+                    selectedContactKeys = selectedKeys,
+                )
+            }
         }
     }
 
@@ -65,9 +71,7 @@ class AssignPatternViewModel @Inject constructor(
         if (patternId.isEmpty()) return
         val selectedKeys = _uiState.value.selectedContactKeys
         viewModelScope.launch {
-            selectedKeys.forEach { lookupKey ->
-                glyphRepository.assignPatternToContact(patternId, lookupKey)
-            }
+            glyphRepository.replaceAssignments(patternId, selectedKeys)
         }
     }
 }

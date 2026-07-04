@@ -5,6 +5,7 @@ import android.content.Context
 import com.glyphdialer.core.domain.glyph.CallVisual
 import com.glyphdialer.core.domain.glyph.GlyphController
 import com.glyphdialer.peripheral.glyph.choreography.GlyphChoreographer
+import com.glyphdialer.peripheral.glyph.choreography.GlyphDeviceProfile
 import com.glyphdialer.peripheral.glyph.choreography.GlyphZone
 import kotlinx.coroutines.CoroutineDispatcher
 import timber.log.Timber
@@ -48,6 +49,7 @@ class GdkGlyphController(
 
     /** Zone → GDK channel-int mapping; resolved when the service connects. */
     private var zoneChannels: Map<GlyphZone, List<Int>> = emptyMap()
+    private var deviceProfile: GlyphDeviceProfile = GlyphDeviceProfile.genericLightStrip
 
     private val choreographer = GlyphChoreographer(
         dispatcher = dispatcher,
@@ -71,11 +73,18 @@ class GdkGlyphController(
     }
 
     override fun playIncomingShow(contactSeed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern) {
+        if (!isAvailable) return
         choreographer.playIncomingShow(contactSeed, pattern)
     }
 
     override fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
+        if (!isAvailable) return
         choreographer.playIncomingShow(contactSeed, customPattern)
+    }
+
+    override fun previewCustomPattern(customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
+        if (!isAvailable) return
+        choreographer.previewCustomPattern(customPattern)
     }
 
     override fun showRecording(active: Boolean) {
@@ -160,6 +169,7 @@ class GdkGlyphController(
             cls.getMethod("openSession").invoke(mgr)
             ready.set(true)
             Timber.tag(TAG).i("GDK session open for device constant=%s, numeric=%d", deviceConst, numeric)
+            deviceProfile = GlyphDeviceProfile.lightStrip(numeric)
             buildZoneChannelMap(numeric.toString())
         } catch (t: Throwable) {
             Timber.tag(TAG).w(t, "GDK register/openSession failed")
@@ -235,7 +245,7 @@ class GdkGlyphController(
                 var builder: Any = cls.getMethod("getGlyphFrameBuilder").invoke(mgr)
                 val frameBuilderClass = builder.javaClass
                 // buildChannel(int) per zone-channel; chained.
-                val channels = zones.flatMap { zoneChannels[it].orEmpty() }
+                val channels = deviceProfile.adapt(zones).flatMap { zoneChannels[it].orEmpty() }
                 val buildChannel = runCatching {
                     frameBuilderClass.getMethod("buildChannel", Int::class.javaPrimitiveType)
                 }.getOrNull()
@@ -337,23 +347,9 @@ class GdkGlyphController(
                     val name = f.name.uppercase()
                     allList.add(value)
                     
-                    when {
-                        name.startsWith("A") -> {
-                            intMap[GlyphZone.TOP_LEFT]?.add(value)
-                        }
-                        name.startsWith("B") -> {
-                            intMap[GlyphZone.TOP_RIGHT]?.add(value)
-                            intMap[GlyphZone.CAMERA_RING]?.add(value)
-                        }
-                        name.startsWith("C") -> {
-                            intMap[GlyphZone.CENTER]?.add(value)
-                        }
-                        name.startsWith("D") -> {
-                            intMap[GlyphZone.BOTTOM_LEFT]?.add(value)
-                        }
-                        name.startsWith("E") -> {
-                            intMap[GlyphZone.BOTTOM_RIGHT]?.add(value)
-                            intMap[GlyphZone.BOTTOM_CENTER]?.add(value)
+                    deviceProfile.prefixBuckets.forEach { (zone, prefixes) ->
+                        if (prefixes.any { prefix -> name.startsWith(prefix) || name.contains(prefix) }) {
+                            intMap[zone]?.add(value)
                         }
                     }
                 }

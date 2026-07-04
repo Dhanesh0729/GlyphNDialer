@@ -10,6 +10,8 @@ interface CustomGlyphPatternRepository {
     suspend fun savePattern(pattern: CustomGlyphPattern)
     suspend fun deletePattern(id: String)
     suspend fun assignPatternToContact(patternId: String, lookupKey: String)
+    suspend fun replaceAssignments(patternId: String, lookupKeys: Set<String>)
+    suspend fun getContactKeysForPattern(patternId: String): Set<String>
     suspend fun getPatternForContact(lookupKey: String): CustomGlyphPattern?
     suspend fun removePatternFromContact(lookupKey: String)
 }

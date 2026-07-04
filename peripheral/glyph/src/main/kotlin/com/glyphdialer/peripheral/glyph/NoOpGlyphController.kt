@@ -27,6 +27,8 @@ class NoOpGlyphController(
 
     override fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) = noOp("playIncomingShow($contactSeed, $customPattern)")
 
+    override fun previewCustomPattern(customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) = noOp("previewCustomPattern($customPattern)")
+
     override fun showRecording(active: Boolean) = noOp("showRecording($active)")
 
     override fun renderWaveform(amplitude: Float) {

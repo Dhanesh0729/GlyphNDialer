@@ -14,6 +14,12 @@ interface ContactGlyphPatternDao {
 
     @Query("SELECT patternId FROM contact_glyph_patterns WHERE contactLookupKey = :lookupKey LIMIT 1")
     suspend fun getPatternIdForContact(lookupKey: String): String?
+
+    @Query("SELECT contactLookupKey FROM contact_glyph_patterns WHERE patternId = :patternId")
+    suspend fun getContactKeysForPattern(patternId: String): List<String>
+
+    @Query("DELETE FROM contact_glyph_patterns WHERE patternId = :patternId")
+    suspend fun clearAssignmentsForPattern(patternId: String)
     
     @Query("DELETE FROM contact_glyph_patterns WHERE contactLookupKey = :lookupKey")
     suspend fun removeAssignment(lookupKey: String)
