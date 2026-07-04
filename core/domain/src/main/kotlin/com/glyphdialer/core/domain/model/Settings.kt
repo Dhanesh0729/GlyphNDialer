@@ -4,6 +4,9 @@ package com.glyphdialer.core.domain.model
 /** App theme selection; persisted in DataStore (§15.2). */
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
+/** Pre-built Glyph patterns for basic/pro tiers. */
+enum class GlyphPattern { PULSE, WAVE, NOTIFICATION, SLOW_FADE, CLASSIC, CYBER, RETRO }
+
 /**
  * User-selectable typeface family (§16). OG = dot-matrix face; NEW = grotesque.
  * Numerals always render in the monospaced cut regardless of selection.
@@ -75,7 +78,7 @@ enum class RetentionWindow(val days: Int?) {
  */
 data class UserPreferences(
     /** Cached entitlement restored from Google Play Billing. Never user-editable. */
-    val appPlan: AppPlan = AppPlan.FREE,
+    val appPlan: AppPlan = AppPlan.PRO,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val appFont: AppFont = AppFont.OG_DOT_MATRIX,
     val accentColor: AccentColor = AccentColor.DEFAULT,
@@ -86,6 +89,7 @@ data class UserPreferences(
     val glyphIntensity: Float = 0.8f,
     val glyphIncomingShow: Boolean = true,
     val glyphRecordingIndicator: Boolean = true,
+    val glyphPattern: GlyphPattern = GlyphPattern.PULSE,
     // Recording
     val recordingEnabled: Boolean = false,
     /** §2.2: user-chosen, with disclaimer; never bypasses an OS-mandated announcement. */

@@ -4,8 +4,11 @@ package com.glyphdialer.feature.settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,7 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,10 +36,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.glyphdialer.core.designsystem.theme.Dimens
 import com.glyphdialer.core.designsystem.theme.GlyphTheme
 import com.glyphdialer.core.designsystem.theme.NumberStyle
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.CapabilityFlags
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.ThemeMode
 import com.glyphdialer.core.ui.component.DotMatrixSpinner
+import com.glyphdialer.core.ui.component.PlanBadge
 import com.glyphdialer.feature.settings.component.AboutGroup
 import com.glyphdialer.feature.settings.component.AppearanceGroup
 import com.glyphdialer.feature.settings.component.CallsGroup
@@ -43,6 +50,8 @@ import com.glyphdialer.feature.settings.component.GlyphGroup
 import com.glyphdialer.feature.settings.component.LockedGlyphGroup
 import com.glyphdialer.feature.settings.component.PlanGroup
 import com.glyphdialer.feature.settings.component.RecordingGroup
+import com.glyphdialer.feature.settings.component.SettingsFolder
+import com.glyphdialer.feature.settings.component.SettingsNavigationRow
 import com.glyphdialer.feature.settings.component.TranscriptionGroup
 
 /**
@@ -66,10 +75,13 @@ import com.glyphdialer.feature.settings.component.TranscriptionGroup
 @Composable
 fun SettingsRoute(
     onNavigateUp: () -> Unit,
+    onOpenBasic: () -> Unit,
+    onOpenPro: () -> Unit,
     onOpenBlockedNumbers: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenSpeedDial: () -> Unit,
     onOpenOpenSourceLicenses: () -> Unit,
+    onOpenGlyphComposer: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -79,10 +91,13 @@ fun SettingsRoute(
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
+                SettingsEffect.NavigateToBasic -> onOpenBasic()
+                SettingsEffect.NavigateToPro -> onOpenPro()
                 SettingsEffect.NavigateToBlockedNumbers -> onOpenBlockedNumbers()
                 SettingsEffect.NavigateToAbout -> onOpenAbout()
                 SettingsEffect.OpenSpeedDial -> onOpenSpeedDial()
                 SettingsEffect.OpenOpenSourceLicenses -> onOpenOpenSourceLicenses()
+                SettingsEffect.NavigateToGlyphComposer -> onOpenGlyphComposer()
                 is SettingsEffect.ShowMessage -> snackbarHostState.showSnackbar(effect.message)
             }
         }
@@ -124,14 +139,21 @@ fun SettingsScreen(
     BackHandler(onBack = onNavigateUp)
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "SETTINGS",
-                        style = MaterialTheme.typography.titleMedium.merge(NumberStyle),
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "SETTINGS",
+                            style = MaterialTheme.typography.titleMedium.merge(NumberStyle),
+                        )
+                        Spacer(Modifier.width(Dimens.spaceSm))
+                        PlanBadge(
+                            text = uiState.preferences.appPlan.name,
+                            isPremium = uiState.preferences.appPlan != AppPlan.FREE
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
@@ -158,14 +180,22 @@ fun SettingsScreen(
                         vertical = Dimens.spaceMd,
                     ),
                 ) {
+                    item(key = "plans") {
+                        SettingsFolder(title = "Upgrade Features", modifier = Modifier) {
+                            SettingsNavigationRow(
+                                title = "Basic Features",
+                                subtitle = "Manage incoming Glyph flashes and standard patterns",
+                                onClick = { onEvent(SettingsEvent.OpenBasic) }
+                            )
+                            SettingsNavigationRow(
+                                title = "Pro Features",
+                                subtitle = "Manage Custom Glyph Composer, fonts, and accents",
+                                onClick = { onEvent(SettingsEvent.OpenPro) }
+                            )
+                        }
+                    }
                     item(key = "appearance") { AppearanceGroup(uiState, onEvent) }
                     item(key = "plan") { PlanGroup(uiState) }
-
-                    // §9/§17: Glyph group is hidden entirely on non-capable devices.
-                    when {
-                        uiState.showGlyphGroup -> item(key = "glyph") { GlyphGroup(uiState, onEvent) }
-                        uiState.showLockedGlyphGroup -> item(key = "glyph_locked") { LockedGlyphGroup() }
-                    }
 
                     item(key = "calls") { CallsGroup(uiState, onEvent) }
                     item(key = "recording") { RecordingGroup(uiState, onEvent) }

@@ -46,10 +46,6 @@ import kotlinx.coroutines.flow.update
 import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -84,18 +80,8 @@ class DialpadViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    private var toneGenerator: ToneGenerator? = null
-
-    private val vibrator = runCatching {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-    }.getOrNull() ?: runCatching {
-        @Suppress("DEPRECATION")
-        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    private val toneGenerator = runCatching {
+        ToneGenerator(AudioManager.STREAM_DTMF, 80)
     }.getOrNull()
 
     /** Raw entered characters; the source of truth the rest of the state derives from. */
@@ -170,10 +156,12 @@ class DialpadViewModel @Inject constructor(
                     glyphAvailable = caps.glyphAvailable && glyphController.isAvailable,
                     isDefaultDialer = caps.isDefaultDialer,
                 ),
+                plan = prefs.appPlan,
                 // On-screen mirror plays whenever the user enabled dialpad strokes; the
                 // *physical* Glyph stroke is additionally gated on real availability (§9).
                 glyphMirrorEnabled = prefs.glyphMasterEnabled && prefs.glyphDialpadStrokes,
                 lastStroke = stroke,
+                hapticFeedbackEnabled = prefs.softDialVibrationEnabled,
             )
         }.stateInEagerly(DialpadUiState())
 
@@ -183,12 +171,6 @@ class DialpadViewModel @Inject constructor(
             capabilityRepository.refresh().onFailure {
                 Timber.w(it.error, "Capability refresh failed; using cached/default flags")
             }
-        }
-
-        try {
-            toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to initialize ToneGenerator")
         }
     }
 
@@ -255,26 +237,11 @@ class DialpadViewModel @Inject constructor(
             '#' -> ToneGenerator.TONE_DTMF_P
             else -> -1
         }
-        if (tone != -1) {
+        toneGenerator?.let { tg ->
             runCatching {
-                toneGenerator?.startTone(tone, 120)
+                tg.startTone(tone, 150) // Play tone for 150ms
             }.onFailure {
-                Timber.w(it, "Failed to play DTMF tone for %s", digit)
-            }
-        }
-        if (!preferences.value.softDialVibrationEnabled) return
-        vibrator?.let { v ->
-            if (v.hasVibrator()) {
-                runCatching {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-                    } else {
-                        @Suppress("DEPRECATION")
-                        v.vibrate(50)
-                    }
-                }.onFailure {
-                    Timber.w(it, "Failed to vibrate for dialpad click")
-                }
+                Timber.w(it, "Failed to play DTMF tone")
             }
         }
     }

@@ -322,10 +322,10 @@ class CallNotificationManager @Inject constructor(
     private fun vibrateIncoming(callId: String) {
         if (lastIncomingVibratedCallId == callId) return
         lastIncomingVibratedCallId = callId
-        vibratePattern(INCOMING_VIBRATION_PATTERN, "Incoming-call vibration failed")
+        vibratePattern(INCOMING_VIBRATION_PATTERN, "Incoming-call vibration failed", isRingtone = true)
     }
 
-    private fun vibratePattern(pattern: LongArray, failureLog: String) {
+    private fun vibratePattern(pattern: LongArray, failureLog: String, isRingtone: Boolean = false) {
         val vibrator = runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 context.getSystemService(VibratorManager::class.java)?.defaultVibrator
@@ -336,11 +336,25 @@ class CallNotificationManager @Inject constructor(
         }.getOrNull() ?: return
         if (!vibrator.hasVibrator()) return
         runCatching {
+            val audioAttributes = android.media.AudioAttributes.Builder()
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(if (isRingtone) android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE else android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST)
+                .build()
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+                val effect = VibrationEffect.createWaveform(pattern, -1)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val attrs = android.os.VibrationAttributes.Builder()
+                        .setUsage(if (isRingtone) android.os.VibrationAttributes.USAGE_RINGTONE else android.os.VibrationAttributes.USAGE_COMMUNICATION_REQUEST)
+                        .build()
+                    vibrator.vibrate(effect, attrs)
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(effect, audioAttributes)
+                }
             } else {
                 @Suppress("DEPRECATION")
-                vibrator.vibrate(pattern, -1)
+                vibrator.vibrate(pattern, -1, audioAttributes)
             }
         }.onFailure { Timber.tag(TelecomConstants.TAG).w(it, failureLog) }
     }

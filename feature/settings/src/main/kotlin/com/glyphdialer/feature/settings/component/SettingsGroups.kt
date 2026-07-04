@@ -57,9 +57,7 @@ fun AppearanceGroup(
     modifier: Modifier = Modifier,
 ) {
     val prefs = state.preferences
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Appearance")
-
+    SettingsFolder(title = "Appearance", modifier = modifier) {
         SettingsChipSelector(
             title = "Theme",
             options = ThemeMode.entries,
@@ -67,7 +65,17 @@ fun AppearanceGroup(
             onSelect = { onEvent(SettingsEvent.SetThemeMode(it)) },
             label = SettingsLabels::theme,
         )
+    }
+}
 
+@Composable
+fun PremiumAppearanceGroup(
+    state: SettingsUiState,
+    onEvent: (SettingsEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val prefs = state.preferences
+    SettingsFolder(title = "Pro Customization", modifier = modifier) {
         SettingsChipSelector(
             title = "Font",
             options = AppFont.entries,
@@ -79,6 +87,20 @@ fun AppearanceGroup(
         AccentPicker(
             selected = prefs.accentColor,
             onSelect = { onEvent(SettingsEvent.SetAccent(it)) },
+        )
+    }
+}
+
+@Composable
+fun PremiumGlyphGroup(
+    onEvent: (SettingsEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsFolder(title = "Pro Glyph Features", modifier = modifier) {
+        SettingsNavigationRow(
+            title = "Custom Glyph Composer",
+            subtitle = "Create your own light sequences",
+            onClick = { onEvent(SettingsEvent.OpenGlyphComposer) },
         )
     }
 }
@@ -151,8 +173,7 @@ fun PlanGroup(
     val basic = MonetizationCatalog.products.first { it.plan == AppPlan.BASIC }
     val pro = MonetizationCatalog.products.first { it.plan == AppPlan.PRO }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Plan")
+    SettingsFolder(title = "Plan", modifier = modifier) {
 
         SettingsStatusRow(
             title = "Current plan",
@@ -187,8 +208,7 @@ fun PlanGroup(
 fun LockedGlyphGroup(
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Glyph")
+    SettingsFolder(title = "Glyph", modifier = modifier) {
         SettingsStatusRow(
             title = "Glyph effects",
             value = "Basic",
@@ -212,8 +232,7 @@ fun GlyphGroup(
 ) {
     val prefs = state.preferences
     val master = prefs.glyphMasterEnabled
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Glyph")
+    SettingsFolder(title = "Glyph", modifier = modifier) {
 
         SettingsSwitchRow(
             title = "Glyph effects",
@@ -254,6 +273,14 @@ fun GlyphGroup(
             enabled = master,
             onCheckedChange = { onEvent(SettingsEvent.SetGlyphRecordingIndicator(it)) },
         )
+
+        SettingsChipSelector(
+            title = "Pattern style",
+            options = com.glyphdialer.core.domain.model.GlyphPattern.entries,
+            selected = prefs.glyphPattern,
+            onSelect = { onEvent(SettingsEvent.SetGlyphPattern(it)) },
+            label = SettingsLabels::pattern,
+        )
     }
 }
 
@@ -266,8 +293,7 @@ fun CallsGroup(
     modifier: Modifier = Modifier,
 ) {
     val prefs = state.preferences
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Calls")
+    SettingsFolder(title = "Calls", modifier = modifier) {
 
         SettingsNavigationRow(
             title = "Speed dial",
@@ -348,8 +374,7 @@ fun RecordingGroup(
     val prefs = state.preferences
     val tier = state.activeRecordingTier
     val recordingPossible = state.recordingPossible
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Recording")
+    SettingsFolder(title = "Recording", modifier = modifier) {
 
         SettingsSwitchRow(
             title = "Enable call recording",
@@ -406,8 +431,7 @@ fun TranscriptionGroup(
 ) {
     val prefs = state.preferences
     val engine = prefs.transcriptionEngine
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Transcription")
+    SettingsFolder(title = "Transcription", modifier = modifier) {
 
         SettingsChipSelector(
             title = "Engine",
@@ -463,8 +487,7 @@ fun ContactsGroup(
     modifier: Modifier = Modifier,
 ) {
     val prefs = state.preferences
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("Contacts")
+    SettingsFolder(title = "Contacts", modifier = modifier) {
 
         SettingsNavigationRow(
             title = "Account filter",
@@ -500,8 +523,7 @@ fun AboutGroup(
     onEvent: (SettingsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingsSectionHeader("About")
+    SettingsFolder(title = "About", modifier = modifier) {
 
         SettingsNavigationRow(
             title = "Open-source licenses",

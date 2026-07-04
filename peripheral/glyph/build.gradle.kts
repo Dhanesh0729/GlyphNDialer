@@ -57,7 +57,7 @@ dependencies {
     // The controllers drive it ENTIRELY VIA REFLECTION so this module compiles
     // real hardware path, drop the official AAR into peripheral/glyph/libs/ and add
     // `implementation(files("libs/<gdk>.aar"))` here (see TODO in README/notes).
-    implementation(files("libs/glyph-matrix-sdk-2.0.aar"))
+    // implementation(files("libs/glyph-matrix-sdk-2.0.aar"))
 
     // Unit testing (JUnit5 + Truth + Turbine + coroutines-test + MockK).
     testImplementation(libs.bundles.unit.test)

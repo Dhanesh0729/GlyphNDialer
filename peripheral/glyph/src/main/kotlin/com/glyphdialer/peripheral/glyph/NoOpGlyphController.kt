@@ -23,7 +23,9 @@ class NoOpGlyphController(
 
     override fun playDigitStroke(digit: Char) = noOp("playDigitStroke('$digit')")
 
-    override fun playIncomingShow(contactSeed: Int) = noOp("playIncomingShow($contactSeed)")
+    override fun playIncomingShow(contactSeed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern) = noOp("playIncomingShow($contactSeed, $pattern)")
+
+    override fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) = noOp("playIncomingShow($contactSeed, $customPattern)")
 
     override fun showRecording(active: Boolean) = noOp("showRecording($active)")
 

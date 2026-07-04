@@ -24,6 +24,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.glyphdialer.core.common.util.digitsOnly
 
 /**
  * [ContactsRepository] backed by [ContactsContract] (CONVENTIONS.md §5, BUILD_SPEC
@@ -475,7 +476,6 @@ class ContactsRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun String.digitsOnly(): String = filter(Char::isDigit)
 
     private fun NumberLabel.toProviderType(): Int = when (this) {
         NumberLabel.MOBILE -> ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE

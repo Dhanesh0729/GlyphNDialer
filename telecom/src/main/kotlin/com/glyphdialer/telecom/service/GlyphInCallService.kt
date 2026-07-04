@@ -12,6 +12,14 @@ import com.glyphdialer.core.domain.model.CallModel
 import com.glyphdialer.core.domain.model.CallState
 import com.glyphdialer.telecom.CallRegistry
 import com.glyphdialer.telecom.Constants
+import com.glyphdialer.core.domain.repository.ContactsRepository
+import com.glyphdialer.core.domain.repository.CustomGlyphPatternRepository
+import com.glyphdialer.core.domain.repository.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import com.glyphdialer.telecom.gesture.BackTapCallController
 import com.glyphdialer.telecom.notification.CallNotificationManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +46,11 @@ import javax.inject.Inject
 class GlyphInCallService : InCallService() {
 
     @Inject lateinit var glyphController: GlyphController
+    @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var contactsRepository: ContactsRepository
+    @Inject lateinit var glyphRepository: CustomGlyphPatternRepository
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var isServiceForeground = false
 
@@ -164,6 +177,7 @@ class GlyphInCallService : InCallService() {
     override fun onDestroy() {
         callbacks.forEach { (call, cb) -> runCatching { call.unregisterCallback(cb) } }
         callbacks.clear()
+        applicationScope.cancel()
         CallRegistry.detachService()
         backTapCallController.release()
         notifications.clearAll()
@@ -260,7 +274,29 @@ class GlyphInCallService : InCallService() {
         }
         runCatching { glyphController.showOnCall(visual) }
         if (primary?.isIncomingRinging == true) {
-            runCatching { glyphController.playIncomingShow(primary.number.dialValue.hashCode()) }
+            applicationScope.launch {
+                var pattern: com.glyphdialer.core.domain.model.GlyphPattern? = null
+                
+                // 1. Try to find custom pattern mapped to this caller
+                val contact = contactsRepository.findByNumber(primary.number.dialValue).let {
+                    if (it is com.glyphdialer.core.common.AppResult.Success) it.data else null
+                }
+                
+                if (contact != null) {
+                    val customPattern = glyphRepository.getPatternForContact(contact.lookupKey)
+                    if (customPattern != null) {
+                        runCatching { glyphController.playIncomingShow(primary.number.dialValue.hashCode(), customPattern) }
+                        return@launch
+                    }
+                }
+                
+                // 2. Fallback to default pattern from settings
+                val defaultPattern = when (val res = settingsRepository.current()) {
+                    is com.glyphdialer.core.common.AppResult.Success -> res.data.glyphPattern
+                    else -> com.glyphdialer.core.domain.model.GlyphPattern.PULSE
+                }
+                runCatching { glyphController.playIncomingShow(primary.number.dialValue.hashCode(), defaultPattern) }
+            }
         }
     }
 

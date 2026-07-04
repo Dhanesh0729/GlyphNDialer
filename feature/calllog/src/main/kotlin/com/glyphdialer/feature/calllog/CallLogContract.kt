@@ -100,13 +100,15 @@ data class QuickActionsTarget(
     val groupId: Long,
     val displayName: String?,
     val number: String,
+    val group: CallLogGroup? = null,
+    val history: List<CallLogGroup> = emptyList()
 )
 
 /**
  * The discrete quick actions on the Nothing-style radial menu (BUILD_SPEC §18):
  * call, message, record-the-next-call, copy number, block.
  */
-enum class CallLogQuickAction { CALL, MESSAGE, RECORD_NEXT, COPY, BLOCK }
+enum class CallLogQuickAction { CALL, VIDEO_CALL, MESSAGE, RECORD_NEXT, COPY, BLOCK }
 
 /**
  * User intents flowing UP from the screen into [CallLogViewModel.onEvent]

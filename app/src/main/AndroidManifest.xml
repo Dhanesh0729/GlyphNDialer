@@ -18,6 +18,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-sdk tools:overrideLibrary="com.nothing.thirdparty" />
+
     <!-- ===================== Permissions (BUILD_SPEC §20) ===================== -->
     <!-- Telephony / telecom -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -108,8 +110,6 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:showWhenLocked="true"
-            android:turnScreenOn="true"
             android:theme="@style/Theme.GlyphDialer.Launch"
             android:windowSoftInputMode="adjustResize">
 

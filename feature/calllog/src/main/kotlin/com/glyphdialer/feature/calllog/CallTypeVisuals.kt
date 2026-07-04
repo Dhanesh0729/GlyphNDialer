@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Voicemail
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -75,6 +76,7 @@ internal data class QuickActionVisual(
 
 internal fun CallLogQuickAction.visual(): QuickActionVisual = when (this) {
     CallLogQuickAction.CALL -> QuickActionVisual(Icons.Filled.Call, "Call")
+    CallLogQuickAction.VIDEO_CALL -> QuickActionVisual(Icons.Filled.Videocam, "Video call")
     CallLogQuickAction.MESSAGE -> QuickActionVisual(Icons.AutoMirrored.Filled.Message, "Message")
     CallLogQuickAction.RECORD_NEXT -> QuickActionVisual(Icons.Filled.FiberManualRecord, "Record next")
     CallLogQuickAction.COPY -> QuickActionVisual(Icons.Filled.ContentCopy, "Copy")

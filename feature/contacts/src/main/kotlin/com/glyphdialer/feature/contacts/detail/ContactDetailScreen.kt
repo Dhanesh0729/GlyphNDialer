@@ -262,7 +262,7 @@ private fun DetailBody(
 
         // ---- Numbers --------------------------------------------------------------
         item(key = "numbers_header") { SectionLabel("NUMBERS") }
-        items(contact.numbers, key = { "num_${it.raw}" }) { number ->
+        items(contact.numbers) { number ->
             NumberRow(
                 number = number,
                 isDefault = number.dialValue == uiState.effectiveDefaultNumber,

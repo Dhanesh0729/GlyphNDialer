@@ -8,9 +8,8 @@ import com.glyphdialer.core.data.provider.ContactsRepositoryImpl
 import com.glyphdialer.core.data.provider.VoicemailRepositoryImpl
 import com.glyphdialer.core.data.repository.CallNoteRepositoryImpl
 import com.glyphdialer.core.data.repository.CapabilityRepositoryImpl
+import com.glyphdialer.core.data.repository.CustomGlyphPatternRepositoryImpl
 import com.glyphdialer.core.data.repository.FavoritesRepositoryImpl
-import com.glyphdialer.core.data.repository.GlyphAvailabilityProbe
-import com.glyphdialer.core.data.repository.NoGlyphAvailabilityProbe
 import com.glyphdialer.core.data.repository.PhoneNumberFormatterImpl
 import com.glyphdialer.core.data.repository.RecordingRepositoryImpl
 import com.glyphdialer.core.data.repository.SpeedDialRepositoryImpl
@@ -20,6 +19,7 @@ import com.glyphdialer.core.domain.repository.CallLogRepository
 import com.glyphdialer.core.domain.repository.CallNoteRepository
 import com.glyphdialer.core.domain.repository.CapabilityRepository
 import com.glyphdialer.core.domain.repository.ContactsRepository
+import com.glyphdialer.core.domain.repository.CustomGlyphPatternRepository
 import com.glyphdialer.core.domain.repository.FavoritesRepository
 import com.glyphdialer.core.domain.repository.PhoneNumberFormatter
 import com.glyphdialer.core.domain.repository.RecordingRepository
@@ -58,6 +58,10 @@ abstract class RepositoryBindingsModule {
 
     @Binds
     @Singleton
+    abstract fun bindCustomGlyphPatternRepository(impl: CustomGlyphPatternRepositoryImpl): CustomGlyphPatternRepository
+
+    @Binds
+    @Singleton
     abstract fun bindCallNoteRepository(impl: CallNoteRepositoryImpl): CallNoteRepository
 
     @Binds
@@ -92,13 +96,5 @@ abstract class RepositoryBindingsModule {
     @Singleton
     abstract fun bindPhoneNumberFormatter(impl: PhoneNumberFormatterImpl): PhoneNumberFormatter
 
-    /**
-     * Conservative default Glyph probe (§9). :peripheral:glyph / :app may replace this
-     * with a real GDK-backed probe; if it does, remove this binding there to avoid a
-     * duplicate-binding clash. Kept here so :core:data is self-sufficient and
-     * non-Nothing builds always report Glyph unavailable.
-     */
-    @Binds
-    @Singleton
-    abstract fun bindGlyphAvailabilityProbe(impl: NoGlyphAvailabilityProbe): GlyphAvailabilityProbe
+
 }

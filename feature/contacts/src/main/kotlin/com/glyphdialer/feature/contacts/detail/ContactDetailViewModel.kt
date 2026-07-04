@@ -65,11 +65,9 @@ class ContactDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val lookupKey: String =
-        Uri.decode(
-            checkNotNull(savedStateHandle[ContactsRoutes.ARG_LOOKUP_KEY]) {
-                "ContactDetail requires a ${ContactsRoutes.ARG_LOOKUP_KEY} argument"
-            },
-        )
+        checkNotNull(savedStateHandle[ContactsRoutes.ARG_LOOKUP_KEY]) {
+            "ContactDetail requires a ${ContactsRoutes.ARG_LOOKUP_KEY} argument"
+        }
 
     private val _uiState = MutableStateFlow(ContactDetailUiState())
     val uiState: StateFlow<ContactDetailUiState> = _uiState.asStateFlow()

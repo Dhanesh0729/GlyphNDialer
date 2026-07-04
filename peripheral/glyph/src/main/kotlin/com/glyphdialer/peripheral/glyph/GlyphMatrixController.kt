@@ -67,9 +67,14 @@ class GlyphMatrixController(
         choreographer.playDigit(digit)
     }
 
-    override fun playIncomingShow(contactSeed: Int) {
+    override fun playIncomingShow(contactSeed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern) {
         if (!isAvailable) return
-        choreographer.playIncomingShow(contactSeed)
+        choreographer.playIncomingShow(contactSeed, pattern)
+    }
+
+    override fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
+        if (!isAvailable) return
+        choreographer.playIncomingShow(contactSeed, customPattern)
     }
 
     override fun showRecording(active: Boolean) {

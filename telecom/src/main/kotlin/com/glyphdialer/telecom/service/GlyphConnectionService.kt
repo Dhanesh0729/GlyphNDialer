@@ -16,6 +16,7 @@ import android.telecom.TelecomManager
 import android.telecom.VideoProfile
 import androidx.annotation.RequiresApi
 import com.glyphdialer.core.domain.glyph.GlyphController
+import com.glyphdialer.core.domain.repository.SettingsRepository
 import com.glyphdialer.core.domain.repository.WebRtcClient
 import com.glyphdialer.core.domain.repository.WebRtcState
 import com.glyphdialer.telecom.Constants
@@ -47,6 +48,7 @@ class GlyphConnectionService : ConnectionService() {
     @Inject lateinit var webRtcClient: WebRtcClient
 
     @Inject lateinit var glyphController: GlyphController
+    @Inject lateinit var settingsRepository: SettingsRepository
 
     override fun onCreateOutgoingConnection(
         connectionManagerPhoneAccount: PhoneAccountHandle?,
@@ -62,6 +64,7 @@ class GlyphConnectionService : ConnectionService() {
             address = request?.address,
             webRtcClient = webRtcClient,
             glyphController = glyphController,
+            settingsRepository = settingsRepository,
             outgoing = true,
             startWithVideo = startWithVideo,
         )
@@ -80,6 +83,7 @@ class GlyphConnectionService : ConnectionService() {
             address = request?.address,
             webRtcClient = webRtcClient,
             glyphController = glyphController,
+            settingsRepository = settingsRepository,
             outgoing = false,
             startWithVideo = false,
         )
@@ -169,6 +173,7 @@ private class GlyphConnection(
     address: Uri?,
     private val webRtcClient: WebRtcClient,
     private val glyphController: GlyphController,
+    private val settingsRepository: SettingsRepository,
     private val outgoing: Boolean,
     private val startWithVideo: Boolean,
 ) : Connection() {
@@ -223,7 +228,13 @@ private class GlyphConnection(
         // Self-managed apps must post their own incoming-call UI; the InCallService
         // notification path handles this for default-dialer mode, and :feature:incall
         // surfaces the full-screen UI. Nothing extra required here.
-        glyphController.playIncomingShow(sessionId.hashCode())
+        scope.launch {
+            val pattern = when (val res = settingsRepository.current()) {
+                is com.glyphdialer.core.common.AppResult.Success -> res.data.glyphPattern
+                else -> com.glyphdialer.core.domain.model.GlyphPattern.PULSE
+            }
+            glyphController.playIncomingShow(sessionId.hashCode(), pattern)
+        }
     }
 
     override fun onAbort() {

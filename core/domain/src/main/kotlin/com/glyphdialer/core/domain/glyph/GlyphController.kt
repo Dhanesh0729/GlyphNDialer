@@ -29,7 +29,12 @@ interface GlyphController {
      * a hash of the caller's number ([contactSeed]) so each caller is recognizable
      * (§17.5).
      */
-    fun playIncomingShow(contactSeed: Int)
+    fun playIncomingShow(contactSeed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern = com.glyphdialer.core.domain.model.GlyphPattern.PULSE)
+
+    /**
+     * Play a user-created custom glyph pattern for the incoming call.
+     */
+    fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern)
 
     /** Show/clear the persistent recording indicator pattern (§17.5). */
     fun showRecording(active: Boolean)

@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.glyphdialer.core.common.dispatchers.Dispatcher
 import com.glyphdialer.core.common.dispatchers.GlyphDispatcher
+import com.glyphdialer.core.data.repository.GlyphAvailabilityProbe
+import com.glyphdialer.peripheral.glyph.GlyphAvailability
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -55,4 +57,12 @@ object AppModule {
     fun provideApplicationScope(
         @Dispatcher(GlyphDispatcher.IO) ioDispatcher: CoroutineDispatcher,
     ): CoroutineScope = CoroutineScope(SupervisorJob() + ioDispatcher)
+
+    @Provides
+    @Singleton
+    fun provideGlyphAvailabilityProbe(
+        availability: GlyphAvailability
+    ): GlyphAvailabilityProbe = object : GlyphAvailabilityProbe {
+        override fun isGlyphAvailable(): Boolean = availability.detect().supported
+    }
 }

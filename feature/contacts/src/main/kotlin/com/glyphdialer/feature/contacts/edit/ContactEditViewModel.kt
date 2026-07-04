@@ -51,7 +51,7 @@ class ContactEditViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val editingLookupKey: String? =
-        savedStateHandle.get<String>(ContactsRoutes.ARG_LOOKUP_KEY)?.let(Uri::decode)
+        savedStateHandle.get<String>(ContactsRoutes.ARG_LOOKUP_KEY)
 
     private val _uiState = MutableStateFlow(ContactEditUiState(isEditing = editingLookupKey != null))
     val uiState: StateFlow<ContactEditUiState> = _uiState.asStateFlow()

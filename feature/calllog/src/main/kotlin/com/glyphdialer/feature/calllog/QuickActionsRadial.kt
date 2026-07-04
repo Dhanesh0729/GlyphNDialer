@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -103,7 +107,61 @@ internal fun QuickActionsSheet(
                     )
                 }
             }
+            
+            // Today's history
+            if (target.history.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(Dimens.spaceMd))
+                DottedDivider(modifier = Modifier.padding(vertical = Dimens.spaceXs))
+                Text(
+                    text = "TODAY's HISTORY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = Dimens.spaceSm)
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(target.history) { historyItem ->
+                        HistoryRow(historyItem)
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun HistoryRow(group: CallLogGroup) {
+    val visual = callTypeVisual(group.dominantType)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Dimens.spaceSm, horizontal = Dimens.spaceMd),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spaceSm)
+        ) {
+            Icon(
+                imageVector = visual.icon,
+                contentDescription = visual.contentDescription,
+                tint = visual.tint(MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.size(16.dp)
+            )
+            val base = if (group.count > 1) "${visual.contentDescription} (${group.count})" else visual.contentDescription
+            Text(
+                text = base,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        Text(
+            text = group.relativeTime,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

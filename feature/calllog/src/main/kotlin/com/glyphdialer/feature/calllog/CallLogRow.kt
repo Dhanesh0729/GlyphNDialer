@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Videocam
@@ -91,6 +92,7 @@ internal fun CallLogRow(
             selectionMode = selectionMode,
             isSelected = isSelected,
             onCall = onCall,
+            onDetails = onDetails,
             onLongPress = onLongPress,
             onToggleSelected = onToggleSelected,
         )
@@ -104,6 +106,7 @@ private fun RowContent(
     selectionMode: Boolean,
     isSelected: Boolean,
     onCall: () -> Unit,
+    onDetails: () -> Unit,
     onLongPress: () -> Unit,
     onToggleSelected: () -> Unit,
 ) {
@@ -120,7 +123,7 @@ private fun RowContent(
             .fillMaxWidth()
             .background(rowBackground)
             .combinedClickable(
-                onClick = { if (selectionMode) onToggleSelected() else onCall() },
+                onClick = { if (selectionMode) onToggleSelected() else onDetails() },
                 onLongClick = { if (!selectionMode) onLongPress() },
             )
             .heightIn(min = Dimens.rowHeight)
@@ -191,20 +194,31 @@ private fun RowContent(
             }
         }
 
-        // Trailing: relative time (and spam label when present).
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = group.relativeTime,
-                style = MaterialTheme.typography.labelMedium.merge(NumberStyle),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (!group.spamLabel.isNullOrBlank()) {
+        // Trailing: relative time (and spam label when present) and call button.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = group.spamLabel.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accent,
-                    maxLines = 1,
+                    text = group.relativeTime,
+                    style = MaterialTheme.typography.labelMedium.merge(NumberStyle),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (!group.spamLabel.isNullOrBlank()) {
+                    Text(
+                        text = group.spamLabel.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = accent,
+                        maxLines = 1,
+                    )
+                }
+            }
+            if (!selectionMode) {
+                androidx.compose.material3.IconButton(onClick = onCall, modifier = Modifier.padding(start = Dimens.spaceSm)) {
+                    Icon(
+                        imageVector = Icons.Filled.Call,
+                        contentDescription = "Call ${group.title}",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }

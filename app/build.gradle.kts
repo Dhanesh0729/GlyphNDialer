@@ -132,6 +132,10 @@ dependencies {
     implementation(project(":peripheral:transcription"))
     implementation(project(":peripheral:webrtc"))
 
+    // The GDK / Glyph Matrix AAR for Nothing Phone compatibility.
+    // It's placed in peripheral/glyph/libs but must be consumed by the app module.
+    implementation(files("../peripheral/glyph/libs/glyph-matrix-sdk-2.0.aar"))
+
     // AndroidX core
     implementation(libs.androidx.core.ktx)
 

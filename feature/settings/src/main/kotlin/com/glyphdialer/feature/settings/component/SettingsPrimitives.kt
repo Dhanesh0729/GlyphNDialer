@@ -18,6 +18,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -27,6 +28,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -51,15 +54,56 @@ private const val DISABLED_ALPHA = 0.38f
 fun SettingsSectionHeader(
     title: String,
     modifier: Modifier = Modifier,
+    expanded: Boolean? = null,
+    onToggle: (() -> Unit)? = null,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(top = Dimens.spaceLg, bottom = Dimens.spaceSm)) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelMedium.merge(NumberStyle),
-            color = MaterialTheme.colorScheme.primary,
-        )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onToggle != null) Modifier.clickable(onClick = onToggle) else Modifier)
+            .padding(top = Dimens.spaceLg, bottom = Dimens.spaceSm)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelMedium.merge(NumberStyle),
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (expanded != null) {
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
         Spacer(Modifier.padding(top = Dimens.spaceXs))
         DottedDivider()
+    }
+}
+
+@Composable
+fun SettingsFolder(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Column(modifier = modifier.fillMaxWidth()) {
+        SettingsSectionHeader(
+            title = title,
+            expanded = expanded,
+            onToggle = { expanded = !expanded }
+        )
+        androidx.compose.animation.AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                content()
+            }
+        }
     }
 }
 

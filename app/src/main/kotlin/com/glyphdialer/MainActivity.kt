@@ -29,6 +29,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -102,6 +103,25 @@ class MainActivity : ComponentActivity() {
                 if (intent != null && intent.action == "com.glyphdialer.action.IN_CALL") {
                     navController.openInCall()
                     intentFlow.value = null
+                }
+            }
+
+            val currentRoute by navController.currentBackStackEntryFlow.map { it.destination.route }.collectAsStateWithLifecycle(initialValue = null)
+            
+            LaunchedEffect(currentRoute) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                    val isInCall = currentRoute?.contains("incall") == true
+                    setShowWhenLocked(isInCall)
+                    setTurnScreenOn(isInCall)
+                    
+                    if (!isInCall) {
+                        val keyguardManager = getSystemService(android.app.KeyguardManager::class.java)
+                        if (keyguardManager?.isKeyguardLocked == true) {
+                            // If we exited the in-call screen and the device is locked,
+                            // hide the app so the user sees the lock screen instead of the dialer.
+                            moveTaskToBack(true)
+                        }
+                    }
                 }
             }
 

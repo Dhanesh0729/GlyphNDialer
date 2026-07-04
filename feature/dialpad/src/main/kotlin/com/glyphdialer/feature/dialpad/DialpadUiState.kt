@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.glyphdialer.feature.dialpad
 
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.usecase.T9Match
 
 /**
@@ -25,8 +26,10 @@ data class DialpadUiState(
     val formattedNumber: String = "",
     val t9Results: List<T9Match> = emptyList(),
     val capabilities: DialpadCapabilities = DialpadCapabilities(),
+    val plan: AppPlan = AppPlan.FREE,
     val glyphMirrorEnabled: Boolean = false,
     val lastStroke: StrokeTrigger? = null,
+    val hapticFeedbackEnabled: Boolean = true,
 ) {
     /** True when there is at least one entered character to dial/edit. */
     val hasInput: Boolean get() = entered.isNotEmpty()

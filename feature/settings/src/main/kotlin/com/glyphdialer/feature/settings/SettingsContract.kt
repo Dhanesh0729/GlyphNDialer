@@ -5,6 +5,7 @@ import com.glyphdialer.core.domain.model.AccentColor
 import com.glyphdialer.core.domain.model.AppFont
 import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.CapabilityFlags
+import com.glyphdialer.core.domain.model.GlyphPattern
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.RetentionWindow
 import com.glyphdialer.core.domain.model.ThemeMode
@@ -12,8 +13,6 @@ import com.glyphdialer.core.domain.model.TranscriptionEngineType
 import com.glyphdialer.core.domain.model.UserPreferences
 
 /**
- * MVVM contract for the Settings screen (BUILD_SPEC §21; CONVENTIONS.md §5).
- *
  * The ViewModel exposes a single immutable [SettingsUiState] via `StateFlow`,
  * receives user intent through [SettingsEvent], and emits one-shot side effects
  * (navigation, external intents, transient messages) through [SettingsEffect].
@@ -100,6 +99,7 @@ sealed interface SettingsEvent {
     data class SetGlyphIntensity(val intensity: Float) : SettingsEvent
     data class SetGlyphIncomingShow(val enabled: Boolean) : SettingsEvent
     data class SetGlyphRecordingIndicator(val enabled: Boolean) : SettingsEvent
+    data class SetGlyphPattern(val pattern: GlyphPattern) : SettingsEvent
 
     // ---- Calls ---------------------------------------------------------------------
     data class SetCallerIdSpam(val enabled: Boolean) : SettingsEvent
@@ -134,6 +134,9 @@ sealed interface SettingsEvent {
     // ---- Navigation requests -------------------------------------------------------
     data object OpenBlockedNumbers : SettingsEvent
     data object OpenSpeedDial : SettingsEvent
+    data object OpenBasic : SettingsEvent
+    data object OpenPro : SettingsEvent
+    data object OpenGlyphComposer : SettingsEvent
     data object OpenAbout : SettingsEvent
     data object OpenOpenSourceLicenses : SettingsEvent
 
@@ -156,6 +159,15 @@ sealed interface SettingsEffect {
 
     /** Ask the host to open the speed-dial assignment surface. */
     data object OpenSpeedDial : SettingsEffect
+
+    /** Navigate to the in-feature Basic sub-screen. */
+    data object NavigateToBasic : SettingsEffect
+
+    /** Navigate to the in-feature Pro sub-screen. */
+    data object NavigateToPro : SettingsEffect
+
+    /** Navigate to the in-feature Custom Glyph Composer. */
+    data object NavigateToGlyphComposer : SettingsEffect
 
     /** Navigate to the in-feature open-source-licenses sub-screen. */
     data object OpenOpenSourceLicenses : SettingsEffect

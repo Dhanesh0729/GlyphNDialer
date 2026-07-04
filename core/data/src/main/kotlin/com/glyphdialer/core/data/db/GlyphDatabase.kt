@@ -17,6 +17,11 @@ import com.glyphdialer.core.data.db.entity.RecordingEntity
 import com.glyphdialer.core.data.db.entity.SpeedDialEntity
 import com.glyphdialer.core.data.db.entity.TranscriptEntity
 import com.glyphdialer.core.data.db.entity.TranscriptSegmentEntity
+import com.glyphdialer.core.data.db.entity.CustomGlyphPatternEntity
+import com.glyphdialer.core.data.db.entity.CustomGlyphFrameEntity
+import com.glyphdialer.core.data.db.dao.CustomGlyphPatternDao
+import com.glyphdialer.core.data.db.entity.ContactGlyphPatternEntity
+import com.glyphdialer.core.data.db.dao.ContactGlyphPatternDao
 
 /**
  * The app's Room database (BUILD_SPEC §19). Holds locally-owned data: recording &
@@ -36,8 +41,11 @@ import com.glyphdialer.core.data.db.entity.TranscriptSegmentEntity
         FavoriteEntity::class,
         CallNoteEntity::class,
         SpeedDialEntity::class,
+        CustomGlyphPatternEntity::class,
+        CustomGlyphFrameEntity::class,
+        ContactGlyphPatternEntity::class,
     ],
-    version = 1,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -48,4 +56,6 @@ abstract class GlyphDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
     abstract fun callNoteDao(): CallNoteDao
     abstract fun speedDialDao(): SpeedDialDao
+    abstract fun customGlyphPatternDao(): CustomGlyphPatternDao
+    abstract fun contactGlyphPatternDao(): ContactGlyphPatternDao
 }

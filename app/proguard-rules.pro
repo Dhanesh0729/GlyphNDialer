@@ -79,3 +79,7 @@
 # -----------------------------------------------------------------------------
 # Compose + Timber are largely covered by their own/AGP rules; nothing extra needed.
 # -----------------------------------------------------------------------------
+
+# SLF4J (used by some WebRTC/third-party libs)
+-dontwarn org.slf4j.**
+-keep class org.slf4j.** { *; }

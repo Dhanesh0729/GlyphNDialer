@@ -70,9 +70,12 @@ class GdkGlyphController(
         choreographer.playDigit(digit)
     }
 
-    override fun playIncomingShow(contactSeed: Int) {
-        if (!isAvailable) return
-        choreographer.playIncomingShow(contactSeed)
+    override fun playIncomingShow(contactSeed: Int, pattern: com.glyphdialer.core.domain.model.GlyphPattern) {
+        choreographer.playIncomingShow(contactSeed, pattern)
+    }
+
+    override fun playIncomingShow(contactSeed: Int, customPattern: com.glyphdialer.core.domain.model.CustomGlyphPattern) {
+        choreographer.playIncomingShow(contactSeed, customPattern)
     }
 
     override fun showRecording(active: Boolean) {

@@ -16,6 +16,8 @@ import com.glyphdialer.core.data.db.dao.CallNoteDao
 import com.glyphdialer.core.data.db.dao.FavoriteDao
 import com.glyphdialer.core.data.db.dao.RecordingDao
 import com.glyphdialer.core.data.db.dao.SpeedDialDao
+import com.glyphdialer.core.data.db.dao.CustomGlyphPatternDao
+import com.glyphdialer.core.data.db.dao.ContactGlyphPatternDao
 import com.glyphdialer.core.data.db.dao.TranscriptDao
 import dagger.Module
 import dagger.Provides
@@ -68,6 +70,12 @@ object DataModule {
 
     @Provides
     fun provideSpeedDialDao(db: GlyphDatabase): SpeedDialDao = db.speedDialDao()
+
+    @Provides
+    fun provideCustomGlyphPatternDao(db: GlyphDatabase): CustomGlyphPatternDao = db.customGlyphPatternDao()
+
+    @Provides
+    fun provideContactGlyphPatternDao(db: GlyphDatabase): ContactGlyphPatternDao = db.contactGlyphPatternDao()
 
     @Provides
     @Singleton

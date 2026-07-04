@@ -4,6 +4,7 @@ package com.glyphdialer.feature.settings
 import com.glyphdialer.core.domain.model.AccentColor
 import com.glyphdialer.core.domain.model.AppFont
 import com.glyphdialer.core.domain.model.AppPlan
+import com.glyphdialer.core.domain.model.GlyphPattern
 import com.glyphdialer.core.domain.model.RecordingTier
 import com.glyphdialer.core.domain.model.RetentionWindow
 import com.glyphdialer.core.domain.model.ThemeMode
@@ -46,6 +47,16 @@ internal object SettingsLabels {
         RetentionWindow.DAYS_90 -> "90 days"
         RetentionWindow.DAYS_180 -> "180 days"
         RetentionWindow.NEVER -> "Never"
+    }
+
+    fun pattern(pattern: GlyphPattern): String = when (pattern) {
+        GlyphPattern.PULSE -> "Pulse"
+        GlyphPattern.WAVE -> "Wave"
+        GlyphPattern.NOTIFICATION -> "Notification"
+        GlyphPattern.SLOW_FADE -> "Slow fade"
+        GlyphPattern.CLASSIC -> "Classic"
+        GlyphPattern.CYBER -> "Cyber"
+        GlyphPattern.RETRO -> "Retro"
     }
 
     fun engine(engine: TranscriptionEngineType): String = when (engine) {

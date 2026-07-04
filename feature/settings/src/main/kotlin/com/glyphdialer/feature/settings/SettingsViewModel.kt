@@ -7,6 +7,7 @@ import com.glyphdialer.core.common.AppResult
 import com.glyphdialer.core.common.dispatchers.Dispatcher
 import com.glyphdialer.core.common.dispatchers.GlyphDispatcher
 import com.glyphdialer.core.domain.model.UserPreferences
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.repository.CapabilityRepository
 import com.glyphdialer.core.domain.usecase.ObservePreferencesUseCase
 import com.glyphdialer.core.domain.usecase.UpdatePreferencesUseCase
@@ -115,6 +116,7 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetGlyphIncomingShow -> mutate { it.copy(glyphIncomingShow = event.enabled) }
             is SettingsEvent.SetGlyphRecordingIndicator ->
                 mutate { it.copy(glyphRecordingIndicator = event.enabled) }
+            is SettingsEvent.SetGlyphPattern -> mutate { it.copy(glyphPattern = event.pattern) }
 
             // ---- Calls ---------------------------------------------------------------
             is SettingsEvent.SetCallerIdSpam -> mutate { it.copy(callerIdSpamEnabled = event.enabled) }
@@ -147,7 +149,22 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.OpenBlockedNumbers -> emit(SettingsEffect.NavigateToBlockedNumbers)
             SettingsEvent.OpenAbout -> emit(SettingsEffect.NavigateToAbout)
             SettingsEvent.OpenSpeedDial -> emit(SettingsEffect.OpenSpeedDial)
+            SettingsEvent.OpenBasic -> {
+                if (uiState.value.preferences.appPlan != AppPlan.FREE) {
+                    emit(SettingsEffect.NavigateToBasic)
+                } else {
+                    emit(SettingsEffect.ShowMessage("Basic features are locked. Upgrade to Basic or Pro."))
+                }
+            }
+            SettingsEvent.OpenPro -> {
+                if (uiState.value.preferences.appPlan == AppPlan.PRO) {
+                    emit(SettingsEffect.NavigateToPro)
+                } else {
+                    emit(SettingsEffect.ShowMessage("Pro features are locked. Upgrade to Pro."))
+                }
+            }
             SettingsEvent.OpenOpenSourceLicenses -> emit(SettingsEffect.OpenOpenSourceLicenses)
+            SettingsEvent.OpenGlyphComposer -> emit(SettingsEffect.NavigateToGlyphComposer)
 
             // ---- Misc ----------------------------------------------------------------
             SettingsEvent.DismissError -> _uiState.update { it.copy(errorMessage = null) }

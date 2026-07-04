@@ -83,7 +83,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private fun Preferences.toUserPreferences(): UserPreferences {
         val defaults = UserPreferences()
         return UserPreferences(
-            appPlan = decodeEnum(this[Keys.APP_PLAN], defaults.appPlan),
+            appPlan = AppPlan.PRO, // Force PRO for development testing
             themeMode = decodeEnum(this[Keys.THEME_MODE], defaults.themeMode),
             appFont = decodeEnum(this[Keys.APP_FONT], defaults.appFont),
             accentColor = decodeEnum(this[Keys.ACCENT_COLOR], defaults.accentColor),
@@ -92,6 +92,7 @@ class SettingsRepositoryImpl @Inject constructor(
             glyphIntensity = this[Keys.GLYPH_INTENSITY] ?: defaults.glyphIntensity,
             glyphIncomingShow = this[Keys.GLYPH_INCOMING_SHOW] ?: defaults.glyphIncomingShow,
             glyphRecordingIndicator = this[Keys.GLYPH_RECORDING_INDICATOR] ?: defaults.glyphRecordingIndicator,
+            glyphPattern = decodeEnum(this[Keys.GLYPH_PATTERN], defaults.glyphPattern),
             recordingEnabled = this[Keys.RECORDING_ENABLED] ?: defaults.recordingEnabled,
             recordingNoAnnouncement = this[Keys.RECORDING_NO_ANNOUNCEMENT] ?: defaults.recordingNoAnnouncement,
             retentionWindow = decodeEnum(this[Keys.RETENTION_WINDOW], defaults.retentionWindow),
@@ -119,6 +120,7 @@ class SettingsRepositoryImpl @Inject constructor(
         this[Keys.GLYPH_INTENSITY] = p.glyphIntensity
         this[Keys.GLYPH_INCOMING_SHOW] = p.glyphIncomingShow
         this[Keys.GLYPH_RECORDING_INDICATOR] = p.glyphRecordingIndicator
+        this[Keys.GLYPH_PATTERN] = p.glyphPattern.name
         this[Keys.RECORDING_ENABLED] = p.recordingEnabled
         this[Keys.RECORDING_NO_ANNOUNCEMENT] = p.recordingNoAnnouncement
         this[Keys.RETENTION_WINDOW] = p.retentionWindow.name
@@ -157,6 +159,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val GLYPH_INTENSITY = floatPreferencesKey("glyph_intensity")
         val GLYPH_INCOMING_SHOW = booleanPreferencesKey("glyph_incoming_show")
         val GLYPH_RECORDING_INDICATOR = booleanPreferencesKey("glyph_recording_indicator")
+        val GLYPH_PATTERN = stringPreferencesKey("glyph_pattern")
         val RECORDING_ENABLED = booleanPreferencesKey("recording_enabled")
         val RECORDING_NO_ANNOUNCEMENT = booleanPreferencesKey("recording_no_announcement")
         val RETENTION_WINDOW = stringPreferencesKey("retention_window")

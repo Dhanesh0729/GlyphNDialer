@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,10 +61,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.glyphdialer.core.designsystem.theme.Dimens
 import com.glyphdialer.core.designsystem.theme.GlyphTheme
 import com.glyphdialer.core.designsystem.theme.NumberStyle
+import com.glyphdialer.core.domain.model.AppPlan
 import com.glyphdialer.core.domain.model.ThemeMode
 import com.glyphdialer.core.domain.usecase.T9Match
 import com.glyphdialer.core.ui.component.DottedDivider
 import com.glyphdialer.core.ui.component.GlyphKey
+import com.glyphdialer.core.ui.component.PlanBadge
 import com.glyphdialer.feature.dialpad.component.T9ResultRow
 import com.glyphdialer.feature.dialpad.glyph.KeyStrokeMirror
 
@@ -106,7 +109,10 @@ fun DialpadRouteScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            DialpadTopBar(onNavigateToSettings = onNavigateToSettings)
+            DialpadTopBar(
+                plan = uiState.plan,
+                onNavigateToSettings = onNavigateToSettings
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
@@ -125,15 +131,23 @@ fun DialpadRouteScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DialpadTopBar(
+    plan: AppPlan,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     TopAppBar(
         title = {
-            Text(
-                text = "GLYPH DIALER",
-                style = MaterialTheme.typography.titleMedium.merge(NumberStyle),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "GLYPH DIALER",
+                    style = MaterialTheme.typography.titleMedium.merge(NumberStyle),
+                )
+                Spacer(Modifier.width(Dimens.spaceSm))
+                PlanBadge(
+                    text = plan.name,
+                    isPremium = plan != AppPlan.FREE
+                )
+            }
         },
         actions = {
             IconButton(onClick = onNavigateToSettings) {
@@ -219,6 +233,7 @@ fun DialpadContent(
         }
 
         Keypad(
+            hapticFeedbackEnabled = state.hapticFeedbackEnabled,
             onKeyPress = { onEvent(DialpadEvent.KeyPress(it)) },
             onLongPress = { onEvent(DialpadEvent.LongPress(it)) },
         )
@@ -394,10 +409,12 @@ private fun CallButton(
  */
 @Composable
 private fun Keypad(
+    hapticFeedbackEnabled: Boolean,
     onKeyPress: (Char) -> Unit,
     onLongPress: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Dimens.spaceSm),
@@ -414,7 +431,12 @@ private fun Keypad(
                     GlyphKey(
                         digit = key.digit,
                         letters = key.letters,
-                        onPress = onKeyPress,
+                        onPress = {
+                            if (hapticFeedbackEnabled) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                            onKeyPress(it)
+                        },
                         onLongPress = { onLongPress(key.digit) },
                         // onDigitStroke deliberately left as the default no-op; see kdoc.
                     )

@@ -216,6 +216,7 @@ class CallLogViewModel @Inject constructor(
         val target = event.target
         when (event.action) {
             CallLogQuickAction.CALL -> emitEffect(CallLogEffect.PlaceCall(target.number))
+            CallLogQuickAction.VIDEO_CALL -> emitEffect(CallLogEffect.PlaceCall(target.number)) // Add video capability in CallLogEffect later if needed, but for now we'll route to PlaceCall
             CallLogQuickAction.MESSAGE -> emitEffect(CallLogEffect.ComposeMessage(target.number))
             CallLogQuickAction.COPY -> emitEffect(CallLogEffect.CopyToClipboard(target.number))
             CallLogQuickAction.RECORD_NEXT -> emitEffect(
@@ -299,7 +300,16 @@ class CallLogViewModel @Inject constructor(
         viewModelScope.launch { _effects.send(effect) }
     }
 
-    private fun CallLogGroup.toTarget() = QuickActionsTarget(id, displayName, number)
+    private fun CallLogGroup.toTarget(): QuickActionsTarget {
+        val todayStart = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val history = dataState.value.groups.filter { it.number == this.number && it.timestampMillis >= todayStart }
+        return QuickActionsTarget(id, displayName, number, this, history)
+    }
 
     /** Internal carrier for the data side of the state. */
     private data class DataState(

@@ -26,4 +26,16 @@ class Converters {
     fun stringToEngine(value: String): TranscriptionEngineType =
         runCatching { TranscriptionEngineType.valueOf(value) }
             .getOrDefault(TranscriptionEngineType.ON_DEVICE_WHISPER)
+
+    @TypeConverter
+    fun zonesToString(zones: List<com.glyphdialer.core.domain.model.CustomGlyphZone>): String =
+        zones.joinToString(",") { it.name }
+
+    @TypeConverter
+    fun stringToZones(value: String): List<com.glyphdialer.core.domain.model.CustomGlyphZone> {
+        if (value.isBlank()) return emptyList()
+        return value.split(",").mapNotNull {
+            runCatching { com.glyphdialer.core.domain.model.CustomGlyphZone.valueOf(it) }.getOrNull()
+        }
+    }
 }
